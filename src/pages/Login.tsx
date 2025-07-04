@@ -3,15 +3,18 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Music, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { useUser } from "@/contexts/UserContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useUser();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,12 +26,15 @@ const Login = () => {
 
     setIsLoading(true);
     
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await login(email, password);
       toast.success("Welcome back to MuseMind!");
-      // Would redirect to dashboard or home page
-    }, 1000);
+      navigate("/");
+    } catch (error) {
+      toast.error("Invalid email or password");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -82,13 +88,6 @@ const Login = () => {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-            </div>
-
-            {/* Forgot Password */}
-            <div className="text-right">
-              <Link to="/forgot-password" className="text-purple-400 hover:text-purple-300 text-sm">
-                Forgot password?
-              </Link>
             </div>
 
             {/* Submit Button */}

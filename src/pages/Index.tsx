@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Navbar } from "@/components/Navbar";
 import { AudioPlayer } from "@/components/AudioPlayer";
+import { CreditsModal } from "@/components/CreditsModal";
 import { toast } from "sonner";
 import { Volume2, Upload, Heart, Save } from "lucide-react";
+import { useUser } from "@/contexts/UserContext";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [prompt, setPrompt] = useState("");
@@ -17,6 +20,10 @@ const Index = () => {
     duration: number;
   } | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
+  
+  const { user, isLoggedIn, deductCredits, saveTrack } = useUser();
+  const navigate = useNavigate();
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -24,16 +31,32 @@ const Index = () => {
       return;
     }
 
+    if (!isLoggedIn) {
+      toast.error("Please log in to generate music");
+      navigate("/login");
+      return;
+    }
+
+    if (!user || user.credits < 1) {
+      setShowCreditsModal(true);
+      return;
+    }
+
     setIsGenerating(true);
+    
+    // Deduct credit first
+    deductCredits(1);
+    toast.success("1 credit deducted");
     
     // Simulate music generation
     setTimeout(() => {
-      setGeneratedTrack({
+      const newTrack = {
         id: "track_" + Date.now(),
-        title: prompt.slice(0, 30) + "...",
-        url: "/api/placeholder-audio", // This would be the actual generated audio URL
-        duration: 180 // 3 minutes
-      });
+        title: prompt.slice(0, 30) + (prompt.length > 30 ? "..." : ""),
+        url: "/api/placeholder-audio",
+        duration: 180
+      };
+      setGeneratedTrack(newTrack);
       setIsGenerating(false);
       toast.success("Music generated successfully!");
     }, 3000);
@@ -53,11 +76,29 @@ const Index = () => {
   };
 
   const handleLike = () => {
-    toast.success("Track liked! ❤️");
+    if (!generatedTrack) return;
+    
+    const trackToSave = {
+      ...generatedTrack,
+      dateCreated: new Date().toISOString()
+    };
+    
+    saveTrack(trackToSave);
+    toast.success("Track saved to your profile! ❤️");
   };
 
   const handleSave = () => {
-    toast.success("Track saved to your profile! 📁");
+    handleLike(); // Same functionality for now
+  };
+
+  const handleRegenerate = () => {
+    if (!user || user.credits < 1) {
+      setShowCreditsModal(true);
+      return;
+    }
+    
+    setGeneratedTrack(null);
+    handleGenerate();
   };
 
   return (
@@ -69,10 +110,10 @@ const Index = () => {
           {/* Hero Section */}
           <div className="mb-12">
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 bg-gradient-to-r from-purple-400 to-green-400 bg-clip-text text-transparent">
-              Create AI-Generated Music Instantly
+              Generate AI-Powered Music from Your Imagination
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
-              Type a mood, upload a sample, and generate tracks in seconds.
+              Enter a prompt. Upload a vibe. Create audio.
             </p>
           </div>
 
@@ -103,6 +144,13 @@ const Index = () => {
                 </label>
               </div>
 
+              {/* Credit Info */}
+              {isLoggedIn && (
+                <div className="text-sm text-gray-400">
+                  Cost: 1 credit per generation • You have {user?.credits || 0} credits
+                </div>
+              )}
+
               {/* Generate Button */}
               <Button
                 onClick={handleGenerate}
@@ -117,7 +165,7 @@ const Index = () => {
                 ) : (
                   <div className="flex items-center gap-2">
                     <Volume2 className="w-5 h-5" />
-                    Generate Music
+                    🔊 Generate Music
                   </div>
                 )}
               </Button>
@@ -136,21 +184,26 @@ const Index = () => {
                   className="flex items-center gap-2 border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
                 >
                   <Heart className="w-4 h-4" />
-                  Like
+                  Like & Save
                 </Button>
                 <Button
-                  onClick={handleSave}
+                  onClick={handleRegenerate}
                   variant="outline"
                   className="flex items-center gap-2 border-green-500/30 text-green-400 hover:bg-green-500/10"
                 >
-                  <Save className="w-4 h-4" />
-                  Save to Profile
+                  <Volume2 className="w-4 h-4" />
+                  🔁 Regenerate (1 credit)
                 </Button>
               </div>
             </div>
           )}
         </div>
       </main>
+
+      <CreditsModal
+        isOpen={showCreditsModal}
+        onClose={() => setShowCreditsModal(false)}
+      />
     </div>
   );
 };

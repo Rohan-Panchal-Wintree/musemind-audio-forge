@@ -2,12 +2,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
+import { PaymentModal } from "@/components/PaymentModal";
 import { toast } from "sonner";
 import { Check, CreditCard } from "lucide-react";
+import { useUser } from "@/contexts/UserContext";
 
 const Credits = () => {
-  const [isLoading, setIsLoading] = useState<string | null>(null);
-  const currentCredits = 120;
+  const [showPayment, setShowPayment] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<{
+    credits: number;
+    price: number;
+  } | null>(null);
+  const { user } = useUser();
 
   const pricingTiers = [
     {
@@ -33,16 +39,9 @@ const Credits = () => {
     }
   ];
 
-  const handlePurchase = async (tierId: string, credits: number, price: number) => {
-    setIsLoading(tierId);
-    
-    // Simulate payment processing
-    setTimeout(() => {
-      setIsLoading(null);
-      toast.success(`Successfully purchased ${credits} credits!`, {
-        description: `$${price} charged to your account`
-      });
-    }, 2000);
+  const handlePurchase = (tier: { credits: number; price: number }) => {
+    setSelectedPackage(tier);
+    setShowPayment(true);
   };
 
   return (
@@ -54,7 +53,7 @@ const Credits = () => {
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Your Credits
+              Buy More Credits
             </h1>
             <p className="text-xl text-gray-300 mb-8">
               Purchase credits to generate AI music
@@ -64,7 +63,7 @@ const Credits = () => {
             <div className="inline-flex items-center gap-3 px-6 py-3 bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-purple-500/20">
               <span className="text-3xl">🎵</span>
               <div className="text-left">
-                <div className="text-2xl font-bold text-white">{currentCredits}</div>
+                <div className="text-2xl font-bold text-white">{user?.credits || 0}</div>
                 <div className="text-sm text-gray-400">Current Credits</div>
               </div>
             </div>
@@ -113,25 +112,17 @@ const Credits = () => {
 
                 {/* Purchase Button */}
                 <Button
-                  onClick={() => handlePurchase(tier.id, tier.credits, tier.price)}
-                  disabled={isLoading === tier.id}
+                  onClick={() => handlePurchase({ credits: tier.credits, price: tier.price })}
                   className={`w-full h-12 font-medium transition-all ${
                     tier.popular
                       ? "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
                       : "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                   }`}
                 >
-                  {isLoading === tier.id ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Processing...
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="w-4 h-4" />
-                      Buy Credits
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4" />
+                    Buy Credits
+                  </div>
                 </Button>
               </div>
             ))}
@@ -159,6 +150,15 @@ const Credits = () => {
           </div>
         </div>
       </main>
+
+      <PaymentModal
+        isOpen={showPayment}
+        onClose={() => {
+          setShowPayment(false);
+          setSelectedPackage(null);
+        }}
+        selectedPackage={selectedPackage || undefined}
+      />
     </div>
   );
 };
