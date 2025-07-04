@@ -6,7 +6,7 @@ import { Navbar } from "@/components/Navbar";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { CreditsModal } from "@/components/CreditsModal";
 import { toast } from "sonner";
-import { Volume2, Upload, Heart, Save } from "lucide-react";
+import { Volume2, Upload, Heart } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 
@@ -87,10 +87,6 @@ const Index = () => {
     toast.success("Track saved to your profile! ❤️");
   };
 
-  const handleSave = () => {
-    handleLike(); // Same functionality for now
-  };
-
   const handleRegenerate = () => {
     if (!user || user.credits < 1) {
       setShowCreditsModal(true);
@@ -110,10 +106,10 @@ const Index = () => {
           {/* Hero Section */}
           <div className="mb-12">
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 bg-gradient-to-r from-purple-400 to-green-400 bg-clip-text text-transparent">
-              Generate AI-Powered Music from Your Imagination
+              Generate AI-Powered Music Instantly
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
-              Enter a prompt. Upload a vibe. Create audio.
+              Type a mood, upload a sample, and hear your imagination.
             </p>
           </div>
 
@@ -184,7 +180,7 @@ const Index = () => {
                   className="flex items-center gap-2 border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
                 >
                   <Heart className="w-4 h-4" />
-                  Like & Save
+                  ❤️ Like & Save
                 </Button>
                 <Button
                   onClick={handleRegenerate}

@@ -1,7 +1,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, Volume2, VolumeX } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Download } from "lucide-react";
 
 interface Track {
   id: string;
@@ -101,21 +101,27 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
           <h4 className="text-white font-medium text-lg">{track.title}</h4>
         </div>
 
-        {/* Waveform Visualization (Placeholder) */}
-        <div className="h-16 bg-slate-800/50 rounded-lg flex items-center justify-center">
+        {/* Waveform Visualization */}
+        <div className="h-16 bg-slate-800/50 rounded-lg flex items-center justify-center relative overflow-hidden">
           <div className="flex items-end gap-1 h-8">
-            {Array.from({ length: 50 }).map((_, i) => (
-              <div
-                key={i}
-                className={`w-1 bg-gradient-to-t from-purple-500 to-green-500 transition-all duration-150 ${
-                  isPlaying ? 'animate-pulse' : ''
-                }`}
-                style={{
-                  height: `${Math.random() * 100}%`,
-                  animationDelay: `${i * 50}ms`
-                }}
-              />
-            ))}
+            {Array.from({ length: 50 }).map((_, i) => {
+              const progress = duration > 0 ? currentTime / duration : 0;
+              const isActive = i < progress * 50;
+              return (
+                <div
+                  key={i}
+                  className={`w-1 transition-all duration-150 ${
+                    isActive 
+                      ? 'bg-gradient-to-t from-green-500 to-purple-500' 
+                      : 'bg-gradient-to-t from-purple-500/30 to-green-500/30'
+                  } ${isPlaying && isActive ? 'animate-pulse' : ''}`}
+                  style={{
+                    height: `${20 + Math.random() * 60}%`,
+                    animationDelay: `${i * 50}ms`
+                  }}
+                />
+              );
+            })}
           </div>
         </div>
 
@@ -127,7 +133,10 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
             max={duration || 0}
             value={currentTime}
             onChange={handleSeek}
-            className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider"
+            className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer"
+            style={{
+              background: `linear-gradient(to right, #a855f7 0%, #22c55e ${duration > 0 ? (currentTime / duration) * 100 : 0}%, #475569 ${duration > 0 ? (currentTime / duration) * 100 : 0}%, #475569 100%)`
+            }}
           />
           <div className="flex justify-between text-sm text-gray-400">
             <span>{formatTime(currentTime)}</span>
@@ -164,20 +173,17 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
             {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
           </Button>
 
-          <div className="w-24" /> {/* Spacer for balance */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-400 hover:text-white p-2"
+            >
+              <Download className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </div>
-
-      <style>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          height: 16px;
-          width: 16px;
-          border-radius: 50%;
-          background: linear-gradient(45deg, #a855f7, #22c55e);
-          cursor: pointer;
-        }
-      `}</style>
     </div>
   );
 };

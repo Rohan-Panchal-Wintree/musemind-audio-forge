@@ -1,60 +1,27 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Navbar } from "@/components/Navbar";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { toast } from "sonner";
-import { Heart, Play, Trash2, Grid, List, User, Calendar } from "lucide-react";
+import { Heart, Trash2, User, Calendar, Edit3, Save, X } from "lucide-react";
+import { useUser } from "@/contexts/UserContext";
 
 const Profile = () => {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  
-  // Mock user data
-  const user = {
-    name: "Alex Johnson",
-    email: "alex@example.com",
-    avatar: "/api/placeholder/128/128",
-    joinDate: "March 2024",
-    totalTracks: 28
+  const { user, savedTracks, removeTrack } = useUser();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(user?.name || "");
+  const [editEmail, setEditEmail] = useState(user?.email || "");
+
+  const handleSaveProfile = () => {
+    // In a real app, this would update the user profile
+    toast.success("Profile updated successfully!");
+    setIsEditing(false);
   };
 
-  // Mock saved tracks
-  const savedTracks = [
-    {
-      id: "1",
-      title: "Chill lo-fi with piano and rain sounds",
-      duration: 180,
-      url: "/api/placeholder-audio",
-      createdAt: "2024-01-15",
-      liked: true
-    },
-    {
-      id: "2", 
-      title: "Upbeat electronic dance with synth waves",
-      duration: 240,
-      url: "/api/placeholder-audio",
-      createdAt: "2024-01-14",
-      liked: true
-    },
-    {
-      id: "3",
-      title: "Acoustic guitar with soft vocals",
-      duration: 210,
-      url: "/api/placeholder-audio", 
-      createdAt: "2024-01-13",
-      liked: true
-    },
-    {
-      id: "4",
-      title: "Ambient space sounds with dreamy pads",
-      duration: 300,
-      url: "/api/placeholder-audio",
-      createdAt: "2024-01-12",
-      liked: true
-    }
-  ];
-
   const handleRemoveTrack = (trackId: string) => {
+    removeTrack(trackId);
     toast.success("Track removed from your saved list");
   };
 
@@ -66,6 +33,19 @@ const Profile = () => {
     });
   };
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <Navbar />
+        <main className="container mx-auto px-6 pt-32 pb-16">
+          <div className="text-center text-white">
+            <h1 className="text-2xl font-bold mb-4">Please log in to view your profile</h1>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <Navbar />
@@ -74,7 +54,7 @@ const Profile = () => {
         <div className="max-w-6xl mx-auto">
           {/* Profile Header */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-500/20 mb-8">
-            <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="flex flex-col md:flex-row items-start gap-6">
               {/* Avatar */}
               <div className="relative">
                 <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-green-500 rounded-full flex items-center justify-center">
@@ -83,28 +63,81 @@ const Profile = () => {
               </div>
 
               {/* User Info */}
-              <div className="flex-1 text-center md:text-left">
-                <h1 className="text-3xl font-bold text-white mb-2">{user.name}</h1>
-                <p className="text-gray-400 mb-4">{user.email}</p>
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-sm text-gray-300">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Joined {user.joinDate}
+              <div className="flex-1">
+                {isEditing ? (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">Name</label>
+                      <Input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="bg-slate-700/50 border-purple-500/30 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                      <Input
+                        value={editEmail}
+                        onChange={(e) => setEditEmail(e.target.value)}
+                        className="bg-slate-700/50 border-purple-500/30 text-white"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleSaveProfile}
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Changes
+                      </Button>
+                      <Button
+                        onClick={() => setIsEditing(false)}
+                        variant="outline"
+                        size="sm"
+                        className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-pink-400" />
-                    {user.totalTracks} Tracks Liked
+                ) : (
+                  <div>
+                    <h1 className="text-3xl font-bold text-white mb-2">{user.name}</h1>
+                    <p className="text-gray-400 mb-4">{user.email}</p>
+                    <div className="flex flex-wrap items-center gap-6 text-sm text-gray-300 mb-4">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        Member since March 2024
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Heart className="w-4 h-4 text-pink-400" />
+                        ❤️ Liked Tracks: {savedTracks.length}
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => setIsEditing(true)}
+                      variant="outline"
+                      size="sm"
+                      className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+                    >
+                      <Edit3 className="w-4 h-4 mr-2" />
+                      ✏️ Edit Profile
+                    </Button>
                   </div>
-                </div>
+                )}
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                <Button variant="outline" className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10">
-                  Edit Profile
-                </Button>
+              {/* Credits & Actions */}
+              <div className="flex flex-col gap-3">
+                <div className="bg-slate-700/50 rounded-lg p-4 text-center">
+                  <div className="text-2xl mb-1">🎵</div>
+                  <div className="text-2xl font-bold text-white">{user.credits}</div>
+                  <div className="text-sm text-gray-400">Credits Remaining</div>
+                </div>
                 <Button className="bg-gradient-to-r from-purple-600 to-green-600 hover:from-purple-700 hover:to-green-700">
-                  Upgrade Plan
+                  💳 Buy More Credits
                 </Button>
               </div>
             </div>
@@ -112,38 +145,8 @@ const Profile = () => {
 
           {/* Saved Tracks Section */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-500/20">
-            {/* Section Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-              <h2 className="text-2xl font-bold text-white">Your Saved Tracks</h2>
-              
-              {/* View Toggle */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={viewMode === "grid" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("grid")}
-                  className={viewMode === "grid" 
-                    ? "bg-purple-600 hover:bg-purple-700" 
-                    : "border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
-                  }
-                >
-                  <Grid className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "list" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("list")}
-                  className={viewMode === "list" 
-                    ? "bg-purple-600 hover:bg-purple-700" 
-                    : "border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
-                  }
-                >
-                  <List className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
+            <h2 className="text-2xl font-bold text-white mb-8">💾 Your Saved Tracks</h2>
 
-            {/* Tracks Display */}
             {savedTracks.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">🎵</div>
@@ -154,79 +157,36 @@ const Profile = () => {
                 </Button>
               </div>
             ) : (
-              <div className={viewMode === "grid" ? "grid gap-6 md:grid-cols-2" : "space-y-6"}>
+              <div className="space-y-6">
                 {savedTracks.map((track) => (
                   <div
                     key={track.id}
-                    className={`bg-slate-700/50 rounded-xl p-6 border border-purple-500/20 hover:border-purple-400/40 transition-colors ${
-                      viewMode === "list" ? "flex items-center gap-6" : ""
-                    }`}
+                    className="bg-slate-700/50 rounded-xl p-6 border border-purple-500/20"
                   >
-                    {viewMode === "grid" ? (
-                      <div className="space-y-4">
-                        {/* Track Info */}
-                        <div>
-                          <h3 className="text-white font-semibold mb-2 line-clamp-2">{track.title}</h3>
-                          <p className="text-gray-400 text-sm">Created {formatDate(track.createdAt)}</p>
-                        </div>
-
-                        {/* Mini Player */}
-                        <AudioPlayer track={track} />
-
-                        {/* Actions */}
-                        <div className="flex items-center justify-between pt-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-pink-400 hover:text-pink-300 hover:bg-pink-500/10"
-                          >
-                            <Heart className="w-4 h-4 mr-2 fill-current" />
-                            Liked
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveTrack(track.id)}
-                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-white font-semibold mb-1">{track.title}</h3>
+                        <p className="text-gray-400 text-sm">Created {formatDate(track.dateCreated)}</p>
                       </div>
-                    ) : (
-                      <>
-                        {/* List View Content */}
-                        <div className="flex-1">
-                          <h3 className="text-white font-semibold mb-1">{track.title}</h3>
-                          <p className="text-gray-400 text-sm">Created {formatDate(track.createdAt)}</p>
-                        </div>
-                        
-                        <div className="flex items-center gap-3">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
-                          >
-                            <Play className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-pink-400 hover:text-pink-300 hover:bg-pink-500/10"
-                          >
-                            <Heart className="w-4 h-4 fill-current" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveTrack(track.id)}
-                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </>
-                    )}
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-pink-400 hover:text-pink-300 hover:bg-pink-500/10"
+                        >
+                          <Heart className="w-4 h-4 fill-current" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveTrack(track.id)}
+                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <AudioPlayer track={track} />
                   </div>
                 ))}
               </div>

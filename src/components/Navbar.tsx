@@ -10,11 +10,6 @@ export const Navbar = () => {
   const location = useLocation();
   const { user, isLoggedIn, logout } = useUser();
 
-  const navLinks = [
-    { href: "/", label: "Explore" },
-    { href: "/credits", label: "Pricing" },
-  ];
-
   const handleLogout = () => {
     logout();
     setIsMenuOpen(false);
@@ -30,28 +25,13 @@ export const Navbar = () => {
             <span className="text-2xl font-bold text-white">MuseMind</span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className={`text-gray-300 hover:text-white transition-colors ${
-                  location.pathname === link.href ? "text-purple-400" : ""
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
           {/* Right Side */}
           <div className="hidden md:flex items-center gap-4">
             {/* Credits */}
             {isLoggedIn && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-slate-800/50 rounded-full border border-purple-500/30">
+              <div className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-full border border-purple-500/30">
                 <span className="text-2xl">🎵</span>
-                <span className="text-white font-medium">{user?.credits || 0} Credits</span>
+                <span className="text-white font-medium">{user?.credits || 0}</span>
               </div>
             )}
 
@@ -61,7 +41,7 @@ export const Navbar = () => {
                 <Link to="/profile">
                   <Button variant="outline" size="sm" className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10">
                     <User className="w-4 h-4 mr-2" />
-                    Profile
+                    👤
                   </Button>
                 </Link>
                 <Button 
@@ -71,19 +51,19 @@ export const Navbar = () => {
                   className="border-red-500/30 text-red-400 hover:bg-red-500/10"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
-                  Logout
+                  🔓
                 </Button>
               </div>
             ) : (
               <div className="flex gap-2">
                 <Link to="/login">
                   <Button variant="outline" size="sm" className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10">
-                    Login
+                    🔒 Login
                   </Button>
                 </Link>
                 <Link to="/signup">
                   <Button size="sm" className="bg-gradient-to-r from-purple-600 to-green-600 hover:from-purple-700 hover:to-green-700">
-                    Sign Up
+                    🔓 Sign Up
                   </Button>
                 </Link>
               </div>
@@ -103,17 +83,6 @@ export const Navbar = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-purple-500/20">
             <div className="flex flex-col gap-4">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  to={link.href}
-                  onClick={() => setIsMenuOpen(false)}
-                  className="text-gray-300 hover:text-white transition-colors px-2"
-                >
-                  {link.label}
-                </Link>
-              ))}
-              
               {/* Mobile Credits */}
               {isLoggedIn && (
                 <div className="flex items-center gap-2 px-2 py-1">
@@ -128,7 +97,7 @@ export const Navbar = () => {
                   <>
                     <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
                       <Button variant="outline" className="w-full border-purple-500/30 text-purple-400 hover:bg-purple-500/10">
-                        Profile
+                        👤 Profile
                       </Button>
                     </Link>
                     <Button 
@@ -136,19 +105,19 @@ export const Navbar = () => {
                       variant="outline" 
                       className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10"
                     >
-                      Logout
+                      🔓 Logout
                     </Button>
                   </>
                 ) : (
                   <>
                     <Link to="/login" onClick={() => setIsMenuOpen(false)}>
                       <Button variant="outline" className="w-full border-purple-500/30 text-purple-400 hover:bg-purple-500/10">
-                        Login
+                        🔒 Login
                       </Button>
                     </Link>
                     <Link to="/signup" onClick={() => setIsMenuOpen(false)}>
                       <Button className="w-full bg-gradient-to-r from-purple-600 to-green-600 hover:from-purple-700 hover:to-green-700">
-                        Sign Up
+                        🔓 Sign Up
                       </Button>
                     </Link>
                   </>
