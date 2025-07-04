@@ -25,6 +25,16 @@ export const Navbar = () => {
             <span className="text-2xl font-bold text-white">MuseMind</span>
           </Link>
 
+          {/* Center Navigation - Desktop */}
+          <div className="hidden md:flex items-center gap-8">
+            <Link 
+              to="/pricing" 
+              className="text-gray-300 hover:text-white transition-colors font-medium"
+            >
+              Pricing
+            </Link>
+          </div>
+
           {/* Right Side */}
           <div className="hidden md:flex items-center gap-4">
             {/* Credits */}
@@ -83,6 +93,15 @@ export const Navbar = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-purple-500/20">
             <div className="flex flex-col gap-4">
+              {/* Mobile Navigation */}
+              <Link 
+                to="/pricing" 
+                onClick={() => setIsMenuOpen(false)}
+                className="text-gray-300 hover:text-white transition-colors px-2 py-1"
+              >
+                Pricing
+              </Link>
+              
               {/* Mobile Credits */}
               {isLoggedIn && (
                 <div className="flex items-center gap-2 px-2 py-1">
