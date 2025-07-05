@@ -14,6 +14,7 @@ const Index = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   
   const { 
     user, 
@@ -63,16 +64,44 @@ const Index = () => {
     }, 3000);
   };
 
+  const validateAndSetFile = (file: File) => {
+    const validTypes = ['audio/mp3', 'audio/wav', 'audio/m4a', 'audio/mpeg'];
+    if (validTypes.includes(file.type)) {
+      setUploadedFile(file);
+      toast.success(`Uploaded: ${file.name}`);
+    } else {
+      toast.error("Please upload a valid audio file (.mp3, .wav, .m4a)");
+    }
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const validTypes = ['audio/mp3', 'audio/wav', 'audio/m4a', 'audio/mpeg'];
-      if (validTypes.includes(file.type)) {
-        setUploadedFile(file);
-        toast.success(`Uploaded: ${file.name}`);
-      } else {
-        toast.error("Please upload a valid audio file (.mp3, .wav, .m4a)");
-      }
+      validateAndSetFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      validateAndSetFile(file);
     }
   };
 
@@ -122,11 +151,33 @@ const Index = () => {
                 />
               </div>
 
-              {/* File Upload */}
-              <div className="flex items-center justify-center">
-                <label className="flex items-center gap-2 px-6 py-3 bg-slate-700/50 text-gray-300 rounded-lg border border-purple-500/30 hover:border-purple-400 cursor-pointer transition-colors">
+              {/* File Upload with Drag & Drop */}
+              <div 
+                className={`flex items-center justify-center transition-all duration-200 ${
+                  isDragOver ? 'scale-105' : ''
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <label className={`flex items-center gap-2 px-6 py-4 bg-slate-700/50 text-gray-300 rounded-lg border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[60px] ${
+                  isDragOver 
+                    ? 'border-purple-400 bg-purple-500/10 text-purple-300' 
+                    : 'border-purple-500/30 hover:border-purple-400'
+                }`}>
                   <Upload className="w-5 h-5" />
-                  {uploadedFile ? uploadedFile.name : "Upload Sample (optional)"}
+                  <div className="text-center">
+                    {uploadedFile ? (
+                      <span>{uploadedFile.name}</span>
+                    ) : (
+                      <div>
+                        <div>Upload Sample (optional)</div>
+                        <div className="text-sm text-gray-400 mt-1">
+                          Click to browse or drag & drop audio files
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <input
                     type="file"
                     accept=".mp3,.wav,.m4a"
