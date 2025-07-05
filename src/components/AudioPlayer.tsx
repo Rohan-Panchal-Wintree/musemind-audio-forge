@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, Volume2, VolumeX, Download } from "lucide-react";
@@ -29,81 +28,68 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
     if (!audio) return;
 
     // Set duration from track props since we don't have real audio
-    setDuration(track.duration);
 
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
     };
-    
-    const handleDurationChange = () => {
-      if (audio.duration && !isNaN(audio.duration)) {
-        setDuration(audio.duration);
-      }
+
+    const handleLoadedMetaData = () => {
+      setDuration(audio.duration);
     };
-    
+
     const handleEnded = () => {
       setIsPlaying(false);
       setCurrentTime(0);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
     };
 
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('durationchange', handleDurationChange);
-    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("durationchange", handleLoadedMetaData);
+    audio.addEventListener("ended", handleEnded);
 
     return () => {
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('durationchange', handleDurationChange);
-      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("durationchange", handleLoadedMetaData);
+      audio.removeEventListener("ended", handleEnded);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
     };
   }, [track.url, track.duration]);
 
-  const simulateAudioProgress = () => {
-    if (!isPlaying) return;
-    
-    setCurrentTime(prev => {
-      const newTime = prev + 0.1;
-      if (newTime >= (duration || track.duration)) {
-        setIsPlaying(false);
-        return 0;
-      }
-      return newTime;
-    });
-
-    animationRef.current = requestAnimationFrame(() => {
-      setTimeout(simulateAudioProgress, 100); // Update every 100ms for smooth progress
-    });
-  };
-
   const togglePlay = async () => {
+    // new code with audio
+    const audio = audioRef.current;
+
+    if (!audio) return;
+
     if (isPlaying) {
+      audio.pause();
       setIsPlaying(false);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
     } else {
-      setIsPlaying(true);
-      simulateAudioProgress();
+      try {
+        await audio.play();
+        setIsPlaying(true);
+      } catch (error) {
+        console.error("audio play failed", error);
+      }
     }
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = parseFloat(e.target.value);
     setCurrentTime(newTime);
-    
-    // If audio is playing, restart the simulation from new time
-    if (isPlaying) {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-      simulateAudioProgress();
+    if (audioRef.current) {
+      audioRef.current.currentTime = newTime;
     }
   };
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.volume = volume;
+      audio.muted = isMuted;
+    }
+  }, [volume, isMuted]);
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
@@ -116,24 +102,31 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
       setVolume(0.5);
       setIsMuted(false);
     } else {
-      setVolume(0);
+      // setVolume(0);
       setIsMuted(true);
     }
   };
 
   const formatTime = (time: number) => {
-    if (isNaN(time)) return '0:00';
+    if (isNaN(time)) return "0:00";
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  const progress = (duration || track.duration) > 0 ? (currentTime / (duration || track.duration)) * 100 : 0;
+  const progress =
+    (duration || track.duration) > 0
+      ? (currentTime / (duration || track.duration)) * 100
+      : 0;
 
   return (
     <div className="bg-slate-700/50 rounded-xl p-6 border border-purple-500/20">
-      <audio ref={audioRef} preload="metadata" />
-      
+      <audio
+        ref={audioRef}
+        src="/assets/flute-melody-315241.mp3"
+        preload="metadata"
+      />
+
       <div className="flex flex-col space-y-4">
         {/* Track Info */}
         <div className="text-center">
@@ -150,14 +143,14 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
                 <div
                   key={i}
                   className={`w-1 transition-all duration-150 ${
-                    isActive 
-                      ? 'bg-gradient-to-t from-green-500 to-purple-500' 
-                      : 'bg-gradient-to-t from-purple-500/30 to-green-500/30'
-                  } ${isPlaying && isActive ? 'animate-pulse' : ''}`}
+                    isActive
+                      ? "bg-gradient-to-t from-green-500 to-purple-500"
+                      : "bg-gradient-to-t from-purple-500/30 to-green-500/30"
+                  } ${isPlaying && isActive ? "animate-pulse" : ""}`}
                   style={{
                     height: `${Math.max(10, Math.min(100, height))}%`,
                     animationDelay: `${i * 50}ms`,
-                    animationDuration: '1s'
+                    animationDuration: "1s",
                   }}
                 />
               );
@@ -177,7 +170,7 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
               onChange={handleSeek}
               className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider"
               style={{
-                background: `linear-gradient(to right, #a855f7 0%, #22c55e ${progress}%, #475569 ${progress}%, #475569 100%)`
+                background: `linear-gradient(to right, #a855f7 0%, #22c55e ${progress}%, #475569 ${progress}%, #475569 100%)`,
               }}
             />
           </div>
@@ -196,7 +189,11 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
               size="sm"
               className="text-gray-400 hover:text-white p-2"
             >
-              {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              {isMuted ? (
+                <VolumeX className="w-4 h-4" />
+              ) : (
+                <Volume2 className="w-4 h-4" />
+              )}
             </Button>
             <input
               type="range"
@@ -213,14 +210,18 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
             onClick={togglePlay}
             className="bg-gradient-to-r from-purple-600 to-green-600 hover:from-purple-700 hover:to-green-700 p-3 rounded-full"
           >
-            {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+            {isPlaying ? (
+              <Pause className="w-5 h-5" />
+            ) : (
+              <Play className="w-5 h-5" />
+            )}
           </Button>
 
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
-              className="text-gray-400 hover:text-white p-2"
+              className="text-gray-400 hover:text-gray-700 p-2"
             >
               <Download className="w-4 h-4" />
             </Button>
@@ -228,8 +229,9 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
         </div>
       </div>
 
-      <style dangerouslySetInnerHTML={{
-        __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
           .slider::-webkit-slider-thumb {
             appearance: none;
             width: 16px;
@@ -250,8 +252,9 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
             border: 2px solid white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
           }
-        `
-      }} />
+        `,
+        }}
+      />
     </div>
   );
 };

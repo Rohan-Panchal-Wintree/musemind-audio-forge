@@ -15,14 +15,14 @@ const Index = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
-  
-  const { 
-    user, 
-    isLoggedIn, 
-    deductCredits, 
-    saveTrack, 
-    currentGeneratedTrack, 
-    setCurrentGeneratedTrack 
+
+  const {
+    user,
+    isLoggedIn,
+    deductCredits,
+    saveTrack,
+    currentGeneratedTrack,
+    setCurrentGeneratedTrack,
   } = useUser();
   const navigate = useNavigate();
 
@@ -44,11 +44,11 @@ const Index = () => {
     }
 
     setIsGenerating(true);
-    
+
     // Deduct credit first
     deductCredits(1);
     toast.success("1 credit deducted");
-    
+
     // Simulate music generation
     setTimeout(() => {
       const newTrack = {
@@ -56,7 +56,7 @@ const Index = () => {
         title: prompt.slice(0, 30) + (prompt.length > 30 ? "..." : ""),
         url: "/api/placeholder-audio",
         duration: 180,
-        dateCreated: new Date().toISOString()
+        dateCreated: new Date().toISOString(),
       };
       setCurrentGeneratedTrack(newTrack);
       setIsGenerating(false);
@@ -65,7 +65,7 @@ const Index = () => {
   };
 
   const validateAndSetFile = (file: File) => {
-    const validTypes = ['audio/mp3', 'audio/wav', 'audio/m4a', 'audio/mpeg'];
+    const validTypes = ["audio/mp3", "audio/wav", "audio/m4a", "audio/mpeg"];
     if (validTypes.includes(file.type)) {
       setUploadedFile(file);
       toast.success(`Uploaded: ${file.name}`);
@@ -107,7 +107,7 @@ const Index = () => {
 
   const handleLike = () => {
     if (!currentGeneratedTrack) return;
-    
+
     saveTrack(currentGeneratedTrack);
     toast.success("Track saved to your profile! ❤️");
   };
@@ -117,7 +117,7 @@ const Index = () => {
       setShowCreditsModal(true);
       return;
     }
-    
+
     setCurrentGeneratedTrack(null);
     handleGenerate();
   };
@@ -125,7 +125,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <Navbar />
-      
+
       <main className="container mx-auto px-6 pt-32 pb-16">
         <div className="max-w-4xl mx-auto text-center">
           {/* Hero Section */}
@@ -152,19 +152,21 @@ const Index = () => {
               </div>
 
               {/* File Upload with Drag & Drop */}
-              <div 
+              <div
                 className={`flex items-center justify-center transition-all duration-200 ${
-                  isDragOver ? 'scale-105' : ''
+                  isDragOver ? "scale-105" : ""
                 }`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
               >
-                <label className={`flex items-center gap-2 px-6 py-4 bg-slate-700/50 text-gray-300 rounded-lg border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[60px] ${
-                  isDragOver 
-                    ? 'border-purple-400 bg-purple-500/10 text-purple-300' 
-                    : 'border-purple-500/30 hover:border-purple-400'
-                }`}>
+                <label
+                  className={`flex flex-col items-center gap-2 px-6 py-4 bg-slate-700/50 text-gray-300 rounded-lg border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[60px] ${
+                    isDragOver
+                      ? "border-purple-400 bg-purple-500/10 text-purple-300"
+                      : "border-purple-500/30 hover:border-purple-400"
+                  }`}
+                >
                   <Upload className="w-5 h-5" />
                   <div className="text-center">
                     {uploadedFile ? (
@@ -190,7 +192,8 @@ const Index = () => {
               {/* Credit Info */}
               {isLoggedIn && (
                 <div className="text-sm text-gray-400">
-                  Cost: 1 credit per generation • You have {user?.credits || 0} credits
+                  Cost: 1 credit per generation • You have {user?.credits || 0}{" "}
+                  credits
                 </div>
               )}
 
@@ -208,7 +211,7 @@ const Index = () => {
                 ) : (
                   <div className="flex items-center gap-2">
                     <Volume2 className="w-5 h-5" />
-                    🔊 Generate Music
+                    Generate Music
                   </div>
                 )}
               </Button>
@@ -218,24 +221,28 @@ const Index = () => {
           {/* Generated Track */}
           {currentGeneratedTrack && (
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-green-500/20">
-              <h3 className="text-xl font-semibold text-white mb-4">Your Generated Track</h3>
+              <h3 className="text-xl font-semibold text-white mb-4">
+                Your Generated Track
+              </h3>
               <AudioPlayer track={currentGeneratedTrack} />
               <div className="flex gap-4 justify-center mt-6">
                 <Button
                   onClick={handleLike}
                   variant="outline"
-                  className="flex items-center gap-2 border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+                  className="flex items-center gap-2 border-purple-500/30 text-purple-400 hover:bg-purple-500/10 hover:text-white"
                 >
                   <Heart className="w-4 h-4" />
-                  ❤️ Like & Save
+                  {/* ❤️ Like & Save */}
+                  Like & Save
                 </Button>
                 <Button
                   onClick={handleRegenerate}
                   variant="outline"
-                  className="flex items-center gap-2 border-green-500/30 text-green-400 hover:bg-green-500/10"
+                  className="flex items-center gap-2 border-green-500/30 text-green-400 hover:bg-green-500/10 hover:text-white"
                 >
                   <Volume2 className="w-4 h-4" />
-                  🔁 Regenerate (1 credit)
+                  {/* 🔁 Regenerate (1 credit) */}
+                  Regenerate (1 credit)
                 </Button>
               </div>
             </div>

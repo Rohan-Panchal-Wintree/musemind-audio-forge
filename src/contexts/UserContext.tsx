@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 interface User {
   id: string;
@@ -33,17 +33,20 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [savedTracks, setSavedTracks] = useState<SavedTrack[]>([]);
-  const [currentGeneratedTrack, setCurrentGeneratedTrack] = useState<SavedTrack | null>(null);
+  const [currentGeneratedTrack, setCurrentGeneratedTrack] =
+    useState<SavedTrack | null>(null);
 
   // Load user data from localStorage on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem('musemind_user');
-    const savedTracksData = localStorage.getItem('musemind_tracks');
-    const savedCurrentTrack = localStorage.getItem('musemind_current_track');
-    
+    const savedUser = localStorage.getItem("musemind_user");
+    const savedTracksData = localStorage.getItem("musemind_tracks");
+    const savedCurrentTrack = localStorage.getItem("musemind_current_track");
+
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
@@ -58,33 +61,36 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Save user data to localStorage whenever it changes
   useEffect(() => {
     if (user) {
-      localStorage.setItem('musemind_user', JSON.stringify(user));
+      localStorage.setItem("musemind_user", JSON.stringify(user));
     } else {
-      localStorage.removeItem('musemind_user');
+      localStorage.removeItem("musemind_user");
     }
   }, [user]);
 
   // Save tracks to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('musemind_tracks', JSON.stringify(savedTracks));
+    localStorage.setItem("musemind_tracks", JSON.stringify(savedTracks));
   }, [savedTracks]);
 
   // Save current generated track to localStorage
   useEffect(() => {
     if (currentGeneratedTrack) {
-      localStorage.setItem('musemind_current_track', JSON.stringify(currentGeneratedTrack));
+      localStorage.setItem(
+        "musemind_current_track",
+        JSON.stringify(currentGeneratedTrack)
+      );
     } else {
-      localStorage.removeItem('musemind_current_track');
+      localStorage.removeItem("musemind_current_track");
     }
   }, [currentGeneratedTrack]);
 
   const login = async (email: string, password: string) => {
     // Simulate login - in real app this would be an API call
     const mockUser: User = {
-      id: 'user_' + Date.now(),
-      name: email.split('@')[0],
+      id: "user_" + Date.now(),
+      name: email.split("@")[0],
       email,
-      credits: 120
+      credits: 120,
     };
     setUser(mockUser);
   };
@@ -92,10 +98,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (name: string, email: string, password: string) => {
     // Simulate signup - in real app this would be an API call
     const mockUser: User = {
-      id: 'user_' + Date.now(),
+      id: "user_" + Date.now(),
       name,
       email,
-      credits: 50 // Starting credits
+      credits: 50, // Starting credits
     };
     setUser(mockUser);
   };
@@ -106,41 +112,47 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const deductCredits = (amount: number) => {
-    setUser(prev => prev ? { ...prev, credits: Math.max(0, prev.credits - amount) } : null);
+    setUser((prev) =>
+      prev ? { ...prev, credits: Math.max(0, prev.credits - amount) } : null
+    );
   };
 
   const addCredits = (amount: number) => {
-    setUser(prev => prev ? { ...prev, credits: prev.credits + amount } : null);
+    setUser((prev) =>
+      prev ? { ...prev, credits: prev.credits + amount } : null
+    );
   };
 
   const saveTrack = (track: SavedTrack) => {
-    setSavedTracks(prev => [...prev, track]);
+    setSavedTracks((prev) => [...prev, track]);
   };
 
   const removeTrack = (trackId: string) => {
-    setSavedTracks(prev => prev.filter(track => track.id !== trackId));
+    setSavedTracks((prev) => prev.filter((track) => track.id !== trackId));
   };
 
   const updateProfile = (updates: { name?: string; email?: string }) => {
-    setUser(prev => prev ? { ...prev, ...updates } : null);
+    setUser((prev) => (prev ? { ...prev, ...updates } : null));
   };
 
   return (
-    <UserContext.Provider value={{
-      user,
-      savedTracks,
-      currentGeneratedTrack,
-      isLoggedIn: !!user,
-      login,
-      signup,
-      logout,
-      deductCredits,
-      addCredits,
-      saveTrack,
-      removeTrack,
-      updateProfile,
-      setCurrentGeneratedTrack
-    }}>
+    <UserContext.Provider
+      value={{
+        user,
+        savedTracks,
+        currentGeneratedTrack,
+        isLoggedIn: !!user,
+        login,
+        signup,
+        logout,
+        deductCredits,
+        addCredits,
+        saveTrack,
+        removeTrack,
+        updateProfile,
+        setCurrentGeneratedTrack,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );
@@ -149,7 +161,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useUser = () => {
   const context = useContext(UserContext);
   if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
+    throw new Error("useUser must be used within a UserProvider");
   }
   return context;
 };
