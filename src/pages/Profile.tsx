@@ -9,14 +9,29 @@ import { Heart, Trash2, User, Calendar, Edit3, Save, X } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 
 const Profile = () => {
-  const { user, savedTracks, removeTrack } = useUser();
+  const { user, savedTracks, removeTrack, updateProfile } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(user?.name || "");
   const [editEmail, setEditEmail] = useState(user?.email || "");
 
   const handleSaveProfile = () => {
-    // In a real app, this would update the user profile
+    if (!editName.trim() || !editEmail.trim()) {
+      toast.error("Name and email cannot be empty");
+      return;
+    }
+
+    updateProfile({
+      name: editName.trim(),
+      email: editEmail.trim()
+    });
+    
     toast.success("Profile updated successfully!");
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditName(user?.name || "");
+    setEditEmail(user?.email || "");
     setIsEditing(false);
   };
 
@@ -72,6 +87,7 @@ const Profile = () => {
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                         className="bg-slate-700/50 border-purple-500/30 text-white"
+                        placeholder="Enter your name"
                       />
                     </div>
                     <div>
@@ -80,6 +96,8 @@ const Profile = () => {
                         value={editEmail}
                         onChange={(e) => setEditEmail(e.target.value)}
                         className="bg-slate-700/50 border-purple-500/30 text-white"
+                        placeholder="Enter your email"
+                        type="email"
                       />
                     </div>
                     <div className="flex gap-2">
@@ -92,7 +110,7 @@ const Profile = () => {
                         Save Changes
                       </Button>
                       <Button
-                        onClick={() => setIsEditing(false)}
+                        onClick={handleCancelEdit}
                         variant="outline"
                         size="sm"
                         className="border-red-500/30 text-red-400 hover:bg-red-500/10"

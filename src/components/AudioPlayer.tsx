@@ -26,31 +26,52 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const handleDurationChange = () => setDuration(audio.duration);
-    const handleEnded = () => setIsPlaying(false);
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+    };
+    
+    const handleDurationChange = () => {
+      setDuration(audio.duration);
+    };
+    
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+
+    const handleCanPlay = () => {
+      setDuration(audio.duration);
+    };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('durationchange', handleDurationChange);
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('canplay', handleCanPlay);
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('durationchange', handleDurationChange);
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('canplay', handleCanPlay);
     };
-  }, []);
+  }, [track.url]);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (isPlaying) {
-      audio.pause();
-    } else {
-      audio.play();
+    try {
+      if (isPlaying) {
+        audio.pause();
+        setIsPlaying(false);
+      } else {
+        await audio.play();
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      setIsPlaying(false);
     }
-    setIsPlaying(!isPlaying);
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,14 +107,21 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
   };
 
   const formatTime = (time: number) => {
+    if (isNaN(time)) return '0:00';
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   return (
     <div className="bg-slate-700/50 rounded-xl p-6 border border-purple-500/20">
-      <audio ref={audioRef} src={track.url} />
+      <audio 
+        ref={audioRef} 
+        src={track.url}
+        preload="metadata"
+      />
       
       <div className="flex flex-col space-y-4">
         {/* Track Info */}
@@ -105,8 +133,8 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
         <div className="h-16 bg-slate-800/50 rounded-lg flex items-center justify-center relative overflow-hidden">
           <div className="flex items-end gap-1 h-8">
             {Array.from({ length: 50 }).map((_, i) => {
-              const progress = duration > 0 ? currentTime / duration : 0;
-              const isActive = i < progress * 50;
+              const isActive = i < (progress / 100) * 50;
+              const height = 20 + Math.sin(i * 0.5) * 30 + Math.random() * 20;
               return (
                 <div
                   key={i}
@@ -116,8 +144,9 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
                       : 'bg-gradient-to-t from-purple-500/30 to-green-500/30'
                   } ${isPlaying && isActive ? 'animate-pulse' : ''}`}
                   style={{
-                    height: `${20 + Math.random() * 60}%`,
-                    animationDelay: `${i * 50}ms`
+                    height: `${Math.max(10, Math.min(100, height))}%`,
+                    animationDelay: `${i * 50}ms`,
+                    animationDuration: '1s'
                   }}
                 />
               );
@@ -133,9 +162,9 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
             max={duration || 0}
             value={currentTime}
             onChange={handleSeek}
-            className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer"
+            className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider"
             style={{
-              background: `linear-gradient(to right, #a855f7 0%, #22c55e ${duration > 0 ? (currentTime / duration) * 100 : 0}%, #475569 ${duration > 0 ? (currentTime / duration) * 100 : 0}%, #475569 100%)`
+              background: `linear-gradient(to right, #a855f7 0%, #22c55e ${progress}%, #475569 ${progress}%, #475569 100%)`
             }}
           />
           <div className="flex justify-between text-sm text-gray-400">
@@ -184,6 +213,29 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: linear-gradient(45deg, #a855f7, #22c55e);
+          cursor: pointer;
+          border: 2px solid white;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .slider::-moz-range-thumb {
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: linear-gradient(45deg, #a855f7, #22c55e);
+          cursor: pointer;
+          border: 2px solid white;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+      `}</style>
     </div>
   );
 };

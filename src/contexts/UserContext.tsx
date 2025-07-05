@@ -27,6 +27,7 @@ interface UserContextType {
   addCredits: (amount: number) => void;
   saveTrack: (track: SavedTrack) => void;
   removeTrack: (trackId: string) => void;
+  updateProfile: (updates: { name?: string; email?: string }) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -105,6 +106,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSavedTracks(prev => prev.filter(track => track.id !== trackId));
   };
 
+  const updateProfile = (updates: { name?: string; email?: string }) => {
+    setUser(prev => prev ? { ...prev, ...updates } : null);
+  };
+
   return (
     <UserContext.Provider value={{
       user,
@@ -116,7 +121,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       deductCredits,
       addCredits,
       saveTrack,
-      removeTrack
+      removeTrack,
+      updateProfile
     }}>
       {children}
     </UserContext.Provider>
