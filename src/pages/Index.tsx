@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,16 +12,17 @@ import { useNavigate } from "react-router-dom";
 const Index = () => {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedTrack, setGeneratedTrack] = useState<{
-    id: string;
-    title: string;
-    url: string;
-    duration: number;
-  } | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
   
-  const { user, isLoggedIn, deductCredits, saveTrack } = useUser();
+  const { 
+    user, 
+    isLoggedIn, 
+    deductCredits, 
+    saveTrack, 
+    currentGeneratedTrack, 
+    setCurrentGeneratedTrack 
+  } = useUser();
   const navigate = useNavigate();
 
   const handleGenerate = async () => {
@@ -54,9 +54,10 @@ const Index = () => {
         id: "track_" + Date.now(),
         title: prompt.slice(0, 30) + (prompt.length > 30 ? "..." : ""),
         url: "/api/placeholder-audio",
-        duration: 180
+        duration: 180,
+        dateCreated: new Date().toISOString()
       };
-      setGeneratedTrack(newTrack);
+      setCurrentGeneratedTrack(newTrack);
       setIsGenerating(false);
       toast.success("Music generated successfully!");
     }, 3000);
@@ -76,14 +77,9 @@ const Index = () => {
   };
 
   const handleLike = () => {
-    if (!generatedTrack) return;
+    if (!currentGeneratedTrack) return;
     
-    const trackToSave = {
-      ...generatedTrack,
-      dateCreated: new Date().toISOString()
-    };
-    
-    saveTrack(trackToSave);
+    saveTrack(currentGeneratedTrack);
     toast.success("Track saved to your profile! ❤️");
   };
 
@@ -93,7 +89,7 @@ const Index = () => {
       return;
     }
     
-    setGeneratedTrack(null);
+    setCurrentGeneratedTrack(null);
     handleGenerate();
   };
 
@@ -169,10 +165,10 @@ const Index = () => {
           </div>
 
           {/* Generated Track */}
-          {generatedTrack && (
+          {currentGeneratedTrack && (
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-green-500/20">
               <h3 className="text-xl font-semibold text-white mb-4">Your Generated Track</h3>
-              <AudioPlayer track={generatedTrack} />
+              <AudioPlayer track={currentGeneratedTrack} />
               <div className="flex gap-4 justify-center mt-6">
                 <Button
                   onClick={handleLike}

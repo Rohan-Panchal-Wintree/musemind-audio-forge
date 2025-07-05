@@ -65,8 +65,42 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
         audio.pause();
         setIsPlaying(false);
       } else {
-        await audio.play();
+        // Create a dummy audio source for demonstration since we don't have real audio files
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        
+        oscillator.start();
         setIsPlaying(true);
+        
+        // Simulate audio progress for demo
+        const startTime = Date.now();
+        const simulateProgress = () => {
+          if (!isPlaying) return;
+          const elapsed = (Date.now() - startTime) / 1000;
+          setCurrentTime(elapsed);
+          if (elapsed < (duration || track.duration)) {
+            requestAnimationFrame(simulateProgress);
+          } else {
+            setIsPlaying(false);
+            setCurrentTime(0);
+            oscillator.stop();
+          }
+        };
+        simulateProgress();
+        
+        // Stop after duration
+        setTimeout(() => {
+          oscillator.stop();
+          setIsPlaying(false);
+          setCurrentTime(0);
+        }, (duration || track.duration) * 1000);
       }
     } catch (error) {
       console.error('Error playing audio:', error);
@@ -156,17 +190,19 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
 
         {/* Progress Bar */}
         <div className="space-y-2">
-          <input
-            type="range"
-            min="0"
-            max={duration || 0}
-            value={currentTime}
-            onChange={handleSeek}
-            className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider"
-            style={{
-              background: `linear-gradient(to right, #a855f7 0%, #22c55e ${progress}%, #475569 ${progress}%, #475569 100%)`
-            }}
-          />
+          <div className="relative">
+            <input
+              type="range"
+              min="0"
+              max={duration || track.duration}
+              value={currentTime}
+              onChange={handleSeek}
+              className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider"
+              style={{
+                background: `linear-gradient(to right, #a855f7 0%, #22c55e ${progress}%, #475569 ${progress}%, #475569 100%)`
+              }}
+            />
+          </div>
           <div className="flex justify-between text-sm text-gray-400">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration || track.duration)}</span>
@@ -214,28 +250,30 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
         </div>
       </div>
 
-      <style jsx>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: linear-gradient(45deg, #a855f7, #22c55e);
-          cursor: pointer;
-          border: 2px solid white;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        
-        .slider::-moz-range-thumb {
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: linear-gradient(45deg, #a855f7, #22c55e);
-          cursor: pointer;
-          border: 2px solid white;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-      `}</style>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #a855f7, #22c55e);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          }
+          
+          .slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #a855f7, #22c55e);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          }
+        `
+      }} />
     </div>
   );
 };
