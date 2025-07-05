@@ -21,121 +21,102 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const animationRef = useRef<number>();
 
+  // Create a dummy audio source for demo purposes
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+
+    // Set duration from track props since we don't have real audio
+    setDuration(track.duration);
 
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
     };
     
     const handleDurationChange = () => {
-      setDuration(audio.duration);
+      if (audio.duration && !isNaN(audio.duration)) {
+        setDuration(audio.duration);
+      }
     };
     
     const handleEnded = () => {
       setIsPlaying(false);
       setCurrentTime(0);
-    };
-
-    const handleCanPlay = () => {
-      setDuration(audio.duration);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
     };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('durationchange', handleDurationChange);
     audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('canplay', handleCanPlay);
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('durationchange', handleDurationChange);
       audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('canplay', handleCanPlay);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
     };
-  }, [track.url]);
+  }, [track.url, track.duration]);
+
+  const simulateAudioProgress = () => {
+    if (!isPlaying) return;
+    
+    setCurrentTime(prev => {
+      const newTime = prev + 0.1;
+      if (newTime >= (duration || track.duration)) {
+        setIsPlaying(false);
+        return 0;
+      }
+      return newTime;
+    });
+
+    animationRef.current = requestAnimationFrame(() => {
+      setTimeout(simulateAudioProgress, 100); // Update every 100ms for smooth progress
+    });
+  };
 
   const togglePlay = async () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    try {
-      if (isPlaying) {
-        audio.pause();
-        setIsPlaying(false);
-      } else {
-        // Create a dummy audio source for demonstration since we don't have real audio files
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
-        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-        
-        oscillator.start();
-        setIsPlaying(true);
-        
-        // Simulate audio progress for demo
-        const startTime = Date.now();
-        const simulateProgress = () => {
-          if (!isPlaying) return;
-          const elapsed = (Date.now() - startTime) / 1000;
-          setCurrentTime(elapsed);
-          if (elapsed < (duration || track.duration)) {
-            requestAnimationFrame(simulateProgress);
-          } else {
-            setIsPlaying(false);
-            setCurrentTime(0);
-            oscillator.stop();
-          }
-        };
-        simulateProgress();
-        
-        // Stop after duration
-        setTimeout(() => {
-          oscillator.stop();
-          setIsPlaying(false);
-          setCurrentTime(0);
-        }, (duration || track.duration) * 1000);
-      }
-    } catch (error) {
-      console.error('Error playing audio:', error);
+    if (isPlaying) {
       setIsPlaying(false);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    } else {
+      setIsPlaying(true);
+      simulateAudioProgress();
     }
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
     const newTime = parseFloat(e.target.value);
-    audio.currentTime = newTime;
     setCurrentTime(newTime);
+    
+    // If audio is playing, restart the simulation from new time
+    if (isPlaying) {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+      simulateAudioProgress();
+    }
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
     const newVolume = parseFloat(e.target.value);
-    audio.volume = newVolume;
     setVolume(newVolume);
     setIsMuted(newVolume === 0);
   };
 
   const toggleMute = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
     if (isMuted) {
-      audio.volume = volume;
+      setVolume(0.5);
       setIsMuted(false);
     } else {
-      audio.volume = 0;
+      setVolume(0);
       setIsMuted(true);
     }
   };
@@ -147,15 +128,11 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const progress = (duration || track.duration) > 0 ? (currentTime / (duration || track.duration)) * 100 : 0;
 
   return (
     <div className="bg-slate-700/50 rounded-xl p-6 border border-purple-500/20">
-      <audio 
-        ref={audioRef} 
-        src={track.url}
-        preload="metadata"
-      />
+      <audio ref={audioRef} preload="metadata" />
       
       <div className="flex flex-col space-y-4">
         {/* Track Info */}
@@ -195,6 +172,7 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
               type="range"
               min="0"
               max={duration || track.duration}
+              step="0.1"
               value={currentTime}
               onChange={handleSeek}
               className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider"
