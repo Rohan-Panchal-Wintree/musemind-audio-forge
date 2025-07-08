@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,14 +17,14 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast.error("Please fill in all fields");
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
       await login(email, password);
       toast.success("Welcome back to MuseMind!");
@@ -42,20 +41,21 @@ const Login = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-4">
+          <Link to="/" className="inline-flex items-center gap-2">
             <Music className="w-10 h-10 text-purple-400" />
             <span className="text-3xl font-bold text-white">MuseMind</span>
           </Link>
-          <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-gray-400">Sign in to continue creating music</p>
         </div>
 
         {/* Login Form */}
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-500/20">
+          <h1 className="text-3xl font-bold text-white mb-4">Login</h1>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-white">Email</Label>
+              <Label htmlFor="email" className="text-white">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -69,7 +69,9 @@ const Login = () => {
 
             {/* Password */}
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-white">Password</Label>
+              <Label htmlFor="password" className="text-white">
+                Password
+              </Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -85,7 +87,11 @@ const Login = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -111,7 +117,10 @@ const Login = () => {
           <div className="mt-6 text-center">
             <p className="text-gray-400">
               Don't have an account?{" "}
-              <Link to="/signup" className="text-purple-400 hover:text-purple-300 font-medium">
+              <Link
+                to="/signup"
+                className="text-purple-400 hover:text-purple-300 font-medium"
+              >
                 Sign Up
               </Link>
             </p>
