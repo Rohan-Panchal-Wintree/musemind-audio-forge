@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { decryptData, importKey } from "@/utils/crypto";
 
+// ---------- Types ----------
 interface User {
   id: string;
   name: string;
@@ -20,8 +22,6 @@ interface UserContextType {
   savedTracks: SavedTrack[];
   currentGeneratedTrack: SavedTrack | null;
   isLoggedIn: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   deductCredits: (amount: number) => void;
   addCredits: (amount: number) => void;
@@ -29,10 +29,13 @@ interface UserContextType {
   removeTrack: (trackId: string) => void;
   updateProfile: (updates: { name?: string; email?: string }) => void;
   setCurrentGeneratedTrack: (track: SavedTrack | null) => void;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>; // Added for AuthContext usage
 }
 
+// ---------- Context ----------
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
+// ---------- Provider ----------
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -41,15 +44,31 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [currentGeneratedTrack, setCurrentGeneratedTrack] =
     useState<SavedTrack | null>(null);
 
-  // Load user data from localStorage on mount
+  // -------- Load Encrypted User on Mount --------
   useEffect(() => {
-    const savedUser = localStorage.getItem("musemind_user");
+    const loadUserFromEncryptedStorage = async () => {
+      const encrypted = localStorage.getItem("user_encrypted");
+      const iv = localStorage.getItem("user_iv");
+
+      if (encrypted && iv) {
+        try {
+          const key = await importKey();
+          const userData = await decryptData(encrypted, iv, key);
+          setUser(userData);
+        } catch (error) {
+          console.error("Decryption error:", error);
+          setUser(null);
+        }
+      }
+    };
+    loadUserFromEncryptedStorage();
+  }, []);
+
+  // -------- Load Saved Tracks and Current Track on Mount --------
+  useEffect(() => {
     const savedTracksData = localStorage.getItem("musemind_tracks");
     const savedCurrentTrack = localStorage.getItem("musemind_current_track");
 
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
     if (savedTracksData) {
       setSavedTracks(JSON.parse(savedTracksData));
     }
@@ -58,21 +77,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  // Save user data to localStorage whenever it changes
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem("musemind_user", JSON.stringify(user));
-    } else {
-      localStorage.removeItem("musemind_user");
-    }
-  }, [user]);
-
-  // Save tracks to localStorage whenever they change
+  // -------- Persist Saved Tracks --------
   useEffect(() => {
     localStorage.setItem("musemind_tracks", JSON.stringify(savedTracks));
   }, [savedTracks]);
 
-  // Save current generated track to localStorage
+  // -------- Persist Current Generated Track --------
   useEffect(() => {
     if (currentGeneratedTrack) {
       localStorage.setItem(
@@ -84,31 +94,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [currentGeneratedTrack]);
 
-  const login = async (email: string, password: string) => {
-    // Simulate login - in real app this would be an API call
-    const mockUser: User = {
-      id: "user_" + Date.now(),
-      name: email.split("@")[0],
-      email,
-      credits: 120,
-    };
-    setUser(mockUser);
-  };
-
-  const signup = async (name: string, email: string, password: string) => {
-    // Simulate signup - in real app this would be an API call
-    const mockUser: User = {
-      id: "user_" + Date.now(),
-      name,
-      email,
-      credits: 50, // Starting credits
-    };
-    setUser(mockUser);
-  };
-
+  // -------- Core Functions --------
   const logout = () => {
     setUser(null);
     setSavedTracks([]);
+    localStorage.removeItem("user_encrypted");
+    localStorage.removeItem("user_iv");
   };
 
   const deductCredits = (amount: number) => {
@@ -142,8 +133,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         savedTracks,
         currentGeneratedTrack,
         isLoggedIn: !!user,
-        login,
-        signup,
         logout,
         deductCredits,
         addCredits,
@@ -151,6 +140,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         removeTrack,
         updateProfile,
         setCurrentGeneratedTrack,
+        setUser,
       }}
     >
       {children}
@@ -158,6 +148,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
+// ---------- Hook ----------
 export const useUser = () => {
   const context = useContext(UserContext);
   if (context === undefined) {

@@ -6,31 +6,37 @@ import { Link, useNavigate } from "react-router-dom";
 import { Music, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { login } = useAuth();
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useUser();
   const navigate = useNavigate();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const { email, password } = formData;
 
     if (!email || !password) {
       toast.error("Please fill in all fields");
       return;
     }
 
-    setIsLoading(true);
-
     try {
-      await login(email, password);
-      toast.success("Welcome back to MuseMind!");
-      navigate("/");
+      setIsLoading(true);
+      await login({ email, password }, navigate);
     } catch (error) {
-      toast.error("Invalid email or password");
+      console.error("there is an error in the login", error);
     } finally {
       setIsLoading(false);
     }
@@ -59,8 +65,9 @@ const Login = () => {
               <Input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
                 placeholder="Enter your email"
                 className="bg-slate-700/50 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400"
                 required
@@ -76,8 +83,9 @@ const Login = () => {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
                   placeholder="Enter your password"
                   className="bg-slate-700/50 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400 pr-10"
                   required

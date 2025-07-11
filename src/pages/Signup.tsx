@@ -2,20 +2,35 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Music, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { sign } from "crypto";
 
 const Signup = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const { signup } = useAuth();
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const { name, email, password } = formData;
+
+    console.log({ name, email, password });
 
     if (!name || !email || !password) {
       toast.error("Please fill in all fields");
@@ -32,14 +47,14 @@ const Signup = () => {
       return;
     }
 
-    setIsLoading(true);
-
-    // Simulate signup
-    setTimeout(() => {
+    try {
+      setIsLoading(true);
+      await signup({ username: name, email, password }, navigate);
+    } catch (error) {
+      console.error("there is an error in the signup", error);
+    } finally {
       setIsLoading(false);
-      toast.success("Welcome to MuseMind! Account created successfully.");
-      // Would redirect to dashboard or home page
-    }, 1000);
+    }
   };
 
   return (
@@ -65,8 +80,9 @@ const Signup = () => {
               <Input
                 id="name"
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
                 placeholder="Enter your full name"
                 className="bg-slate-700/50 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400"
                 required
@@ -81,8 +97,9 @@ const Signup = () => {
               <Input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
                 placeholder="Enter your email"
                 className="bg-slate-700/50 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400"
                 required
@@ -98,8 +115,9 @@ const Signup = () => {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
                   placeholder="Create a password (min. 6 characters)"
                   className="bg-slate-700/50 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400 pr-10"
                   required
