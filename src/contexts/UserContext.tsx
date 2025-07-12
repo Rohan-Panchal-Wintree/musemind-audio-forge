@@ -7,6 +7,7 @@ interface User {
   name: string;
   email: string;
   credits: number;
+  createdAt: string;
 }
 
 interface SavedTrack {
@@ -54,6 +55,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         try {
           const key = await importKey();
           const userData = await decryptData(encrypted, iv, key);
+
           setUser(userData);
         } catch (error) {
           console.error("Decryption error:", error);

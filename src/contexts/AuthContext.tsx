@@ -46,14 +46,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         withCredentials: true,
       });
       const userData = response.data.user;
+      const transformedUser = {
+        id: userData.id,
+        name: userData.username,
+        email: userData.email,
+        credits: userData.credits,
+        createdAt: userData.createdAt,
+      };
       const key = await importKey();
-      const { encrypted, iv } = await encryptData(userData, key);
+      const { encrypted, iv } = await encryptData(transformedUser, key);
       console.log("response", response.data);
 
       localStorage.setItem("user_encrypted", encrypted);
       localStorage.setItem("user_iv", iv);
 
-      setUser(userData);
+      setUser(transformedUser);
 
       toast.success("Account created successfully!");
       navigate("/");
@@ -74,14 +81,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       const userData = response.data.user;
+      const transformedUser = {
+        id: userData.id,
+        name: userData.username,
+        email: userData.email,
+        credits: userData.credits,
+        createdAt: userData.createdAt,
+      };
       const key = await importKey();
-      const { encrypted, iv } = await encryptData(userData, key);
+      const { encrypted, iv } = await encryptData(transformedUser, key);
       console.log("response", response.data);
 
       localStorage.setItem("user_encrypted", encrypted);
       localStorage.setItem("user_iv", iv);
 
-      setUser(userData);
+      setUser(transformedUser);
 
       toast.success(response.data.message);
       navigate("/");

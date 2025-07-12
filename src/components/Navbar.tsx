@@ -38,10 +38,10 @@ export const Navbar = () => {
           <div className="hidden md:flex items-center gap-4">
             {/* Credits */}
             {isLoggedIn && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-full border border-purple-500/30">
+              <div className="flex items-center gap-2 px-4 py-1 bg-slate-800/50 rounded-full border border-purple-500/30">
                 <span className="text-2xl">🎵</span>
                 <span className="text-white font-medium">
-                  {user?.credits || 0}
+                  {user?.credits || 0} Credits
                 </span>
               </div>
             )}
@@ -55,8 +55,8 @@ export const Navbar = () => {
                     size="sm"
                     className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
                   >
-                    <User className="w-4 h-4 mr-2" />
-                    👤
+                    <User className="w-4 h-4" />
+                    Profile
                   </Button>
                 </Link>
                 <Button
@@ -65,8 +65,8 @@ export const Navbar = () => {
                   size="sm"
                   className="border-red-500/30 text-red-400 hover:bg-red-500/10"
                 >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  🔓
+                  <LogOut className="w-4 h-4" />
+                  Logout
                 </Button>
               </div>
             ) : (

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
@@ -28,8 +27,8 @@ const Pricing = () => {
         "Standard Quality Audio",
         "Basic Support",
         "Download MP3 Files",
-        "Save to Profile"
-      ]
+        "Save to Profile",
+      ],
     },
     {
       id: "pro",
@@ -45,8 +44,8 @@ const Pricing = () => {
         "Priority Support",
         "Extended Track Length",
         "Advanced Audio Controls",
-        "Commercial Usage Rights"
-      ]
+        "Commercial Usage Rights",
+      ],
     },
     {
       id: "creator",
@@ -63,9 +62,9 @@ const Pricing = () => {
         "Longest Track Length",
         "Full Commercial License",
         "API Access",
-        "Custom Model Training"
-      ]
-    }
+        "Custom Model Training",
+      ],
+    },
   ];
 
   const handleSelectPackage = (tier: { credits: number; price: number }) => {
@@ -81,29 +80,22 @@ const Pricing = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <Navbar />
-      
+
       <main className="container mx-auto px-6 pt-24 pb-16">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="text-center mb-16">
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-              Choose Your <span className="bg-gradient-to-r from-purple-400 to-green-400 bg-clip-text text-transparent">Creative Plan</span>
+              Choose Your{" "}
+              <span className="bg-gradient-to-r from-purple-400 to-green-400 bg-clip-text text-transparent">
+                Creative Plan
+              </span>
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-              Unlock the power of AI music generation with our flexible credit system. 
-              Generate unlimited tracks, save your favorites, and bring your musical ideas to life.
+              Unlock the power of AI music generation with our flexible credit
+              system. Generate unlimited tracks, save your favorites, and bring
+              your musical ideas to life.
             </p>
-            
-            {/* Current Credits Display */}
-            {user && (
-              <div className="inline-flex items-center gap-3 px-6 py-3 bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-purple-500/20 mb-8">
-                <span className="text-3xl">🎵</span>
-                <div className="text-left">
-                  <div className="text-2xl font-bold text-white">{user.credits}</div>
-                  <div className="text-sm text-gray-400">Current Credits</div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Pricing Cards */}
@@ -112,8 +104,8 @@ const Pricing = () => {
               <div
                 key={tier.id}
                 className={`relative bg-slate-800/50 backdrop-blur-sm rounded-3xl p-8 border transition-all duration-300 hover:scale-105 ${
-                  tier.popular 
-                    ? "border-green-500/50 ring-2 ring-green-500/20 lg:scale-105" 
+                  tier.popular
+                    ? "border-green-500/50 ring-2 ring-green-500/20 lg:scale-105"
                     : "border-purple-500/20"
                 }`}
               >
@@ -128,19 +120,25 @@ const Pricing = () => {
 
                 {/* Header */}
                 <div className="text-center mb-8">
-                  <div className="flex justify-center mb-4">
-                    {tier.icon}
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-2">{tier.name}</h3>
-                  <p className="text-gray-400 text-sm mb-6">{tier.description}</p>
-                  
+                  <div className="flex justify-center mb-4">{tier.icon}</div>
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    {tier.name}
+                  </h3>
+                  <p className="text-gray-400 text-sm mb-6">
+                    {tier.description}
+                  </p>
+
                   <div className="mb-2">
-                    <span className="text-5xl font-bold text-white">{tier.credits}</span>
+                    <span className="text-5xl font-bold text-white">
+                      {tier.credits}
+                    </span>
                     <span className="text-gray-400 ml-2">credits</span>
                   </div>
                   <div className="text-3xl font-bold text-white">
                     ${tier.price}
-                    <span className="text-base text-gray-400 font-normal ml-1">one-time</span>
+                    <span className="text-base text-gray-400 font-normal ml-1">
+                      one-time
+                    </span>
                   </div>
                 </div>
 
@@ -156,7 +154,12 @@ const Pricing = () => {
 
                 {/* Purchase Button */}
                 <Button
-                  onClick={() => handleSelectPackage({ credits: tier.credits, price: tier.price })}
+                  onClick={() =>
+                    handleSelectPackage({
+                      credits: tier.credits,
+                      price: tier.price,
+                    })
+                  }
                   className={`w-full h-12 font-medium transition-all ${
                     tier.popular
                       ? "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
@@ -176,20 +179,41 @@ const Pricing = () => {
             </h2>
             <div className="grid md:grid-cols-2 gap-8">
               <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-purple-500/20">
-                <h3 className="text-white font-semibold mb-3">How do credits work?</h3>
-                <p className="text-gray-300">Each music generation costs 1 credit. Credits never expire and can be used anytime. Generate as many tracks as you want!</p>
+                <h3 className="text-white font-semibold mb-3">
+                  How do credits work?
+                </h3>
+                <p className="text-gray-300">
+                  Each music generation costs 1 credit. Credits never expire and
+                  can be used anytime. Generate as many tracks as you want!
+                </p>
               </div>
               <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-purple-500/20">
-                <h3 className="text-white font-semibold mb-3">What audio quality do I get?</h3>
-                <p className="text-gray-300">All plans include high-quality MP3 downloads. Pro and Creator plans offer enhanced audio processing and longer track lengths.</p>
+                <h3 className="text-white font-semibold mb-3">
+                  What audio quality do I get?
+                </h3>
+                <p className="text-gray-300">
+                  All plans include high-quality MP3 downloads. Pro and Creator
+                  plans offer enhanced audio processing and longer track
+                  lengths.
+                </p>
               </div>
               <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-purple-500/20">
-                <h3 className="text-white font-semibold mb-3">Can I use the music commercially?</h3>
-                <p className="text-gray-300">Pro and Creator plans include commercial usage rights. Starter plan is for personal use only.</p>
+                <h3 className="text-white font-semibold mb-3">
+                  Can I use the music commercially?
+                </h3>
+                <p className="text-gray-300">
+                  Pro and Creator plans include commercial usage rights. Starter
+                  plan is for personal use only.
+                </p>
               </div>
               <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-purple-500/20">
-                <h3 className="text-white font-semibold mb-3">Is there a subscription?</h3>
-                <p className="text-gray-300">No! We use a simple credit system. Buy credits once and use them whenever you want. No recurring charges.</p>
+                <h3 className="text-white font-semibold mb-3">
+                  Is there a subscription?
+                </h3>
+                <p className="text-gray-300">
+                  No! We use a simple credit system. Buy credits once and use
+                  them whenever you want. No recurring charges.
+                </p>
               </div>
             </div>
           </div>
