@@ -21,7 +21,7 @@ export const signup = async (req, res) => {
 
     sendToken(res, user._id);
     res.status(201).json({
-      user: { username, email, credits, id: user._id },
+      user: { username, email, credits, id: user._id, createdAt },
       message: "Signup succesful",
     });
   } catch (error) {
@@ -47,6 +47,7 @@ export const login = async (req, res) => {
         email: user.email,
         credits: user.credits,
         id: user._id,
+        createdAt: user.createdAt,
       },
       message: "Login successful",
     });
