@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
+import { useNavigate } from "react-router-dom";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
@@ -36,14 +37,28 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  to?: string;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  (
+    { className, variant, size, asChild = false, to, onClick, ...props },
+    ref
+  ) => {
     const Comp = asChild ? Slot : "button";
+    const navigate = useNavigate();
+
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (onClick) onClick(e);
+      if (!e.defaultPrevented && to) {
+        navigate(to);
+      }
+    };
+
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
+        onClick={handleClick}
         ref={ref}
         {...props}
       />

@@ -5,13 +5,14 @@ import { Navbar } from "@/components/Navbar";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { CreditsModal } from "@/components/CreditsModal";
 import { toast } from "sonner";
-import { Volume2, Upload, Heart } from "lucide-react";
+import { Volume2, Upload, Heart, Sparkles } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useNavigate } from "react-router-dom";
+import { useAudio } from "@/contexts/AudioContext";
 
 const Index = () => {
   const [prompt, setPrompt] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [duration, setDuration] = useState<number>(4);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -19,14 +20,17 @@ const Index = () => {
   const {
     user,
     isLoggedIn,
-    deductCredits,
     saveTrack,
     currentGeneratedTrack,
     setCurrentGeneratedTrack,
   } = useUser();
+
+  const { generateMusic, isGenerating } = useAudio();
   const navigate = useNavigate();
 
   const handleGenerate = async () => {
+    console.log("prompt", prompt, duration);
+
     if (!prompt.trim()) {
       toast.error("Please enter a music prompt");
       return;
@@ -43,25 +47,11 @@ const Index = () => {
       return;
     }
 
-    setIsGenerating(true);
-
-    // Deduct credit first
-    deductCredits(1);
-    toast.success("1 credit deducted");
-
-    // Simulate music generation
-    setTimeout(() => {
-      const newTrack = {
-        id: "track_" + Date.now(),
-        title: prompt.slice(0, 30) + (prompt.length > 30 ? "..." : ""),
-        url: "/api/placeholder-audio",
-        duration: 180,
-        dateCreated: new Date().toISOString(),
-      };
-      setCurrentGeneratedTrack(newTrack);
-      setIsGenerating(false);
-      toast.success("Music generated successfully!");
-    }, 3000);
+    try {
+      await generateMusic(prompt, duration);
+    } catch (err) {
+      console.error("Generation failed:", err);
+    }
   };
 
   const validateAndSetFile = (file: File) => {
@@ -83,31 +73,26 @@ const Index = () => {
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDragOver(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDragOver(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDragOver(false);
 
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-      const file = files[0];
-      validateAndSetFile(file);
+      validateAndSetFile(files[0]);
     }
   };
 
   const handleLike = () => {
     if (!currentGeneratedTrack) return;
-
     saveTrack(currentGeneratedTrack);
     toast.success("Track saved to your profile! ❤️");
   };
@@ -128,7 +113,6 @@ const Index = () => {
 
       <main className="container mx-auto px-6 pt-32 pb-16">
         <div className="max-w-4xl mx-auto text-center">
-          {/* Hero Section */}
           <div className="mb-12">
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 bg-gradient-to-r from-purple-400 to-green-400 bg-clip-text text-transparent">
               Generate AI-Powered Music Instantly
@@ -138,20 +122,32 @@ const Index = () => {
             </p>
           </div>
 
-          {/* Generation Interface */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-500/20 mb-8">
             <div className="space-y-6">
-              {/* Prompt Input */}
-              <div>
-                <Input
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="e.g. Chill lo-fi with piano and rain sounds"
-                  className="w-full h-14 text-lg bg-slate-700/50 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400"
-                />
+              <Input
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="e.g. Chill lo-fi with piano and rain sounds"
+                className="w-full h-14 text-lg bg-slate-700/50 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400"
+              />
+
+              <div className="text-left">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Select Duration (seconds)
+                </label>
+                <select
+                  value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value))}
+                  className="w-full h-12 px-4 rounded-md bg-slate-700/50 border border-purple-500/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-400"
+                >
+                  {[4, 5, 6, 7, 8].map((sec) => (
+                    <option key={sec} value={sec}>
+                      {sec} seconds
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {/* File Upload with Drag & Drop */}
               <div
                 className={`flex items-center justify-center transition-all duration-200 ${
                   isDragOver ? "scale-105" : ""
@@ -172,12 +168,12 @@ const Index = () => {
                     {uploadedFile ? (
                       <span>{uploadedFile.name}</span>
                     ) : (
-                      <div>
+                      <>
                         <div>Upload Sample (optional)</div>
                         <div className="text-sm text-gray-400 mt-1">
                           Click to browse or drag & drop audio files
                         </div>
-                      </div>
+                      </>
                     )}
                   </div>
                   <input
@@ -189,7 +185,6 @@ const Index = () => {
                 </label>
               </div>
 
-              {/* Credit Info */}
               {isLoggedIn && (
                 <div className="text-sm text-gray-400">
                   Cost: 1 credit per generation • You have {user?.credits || 0}{" "}
@@ -197,7 +192,6 @@ const Index = () => {
                 </div>
               )}
 
-              {/* Generate Button */}
               <Button
                 onClick={handleGenerate}
                 disabled={isGenerating}
@@ -210,7 +204,7 @@ const Index = () => {
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <Volume2 className="w-5 h-5" />
+                    <Sparkles className="w-5 h-5" />
                     Generate Music
                   </div>
                 )}
@@ -218,7 +212,6 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Generated Track */}
           {currentGeneratedTrack && (
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-green-500/20">
               <h3 className="text-xl font-semibold text-white mb-4">
@@ -232,7 +225,6 @@ const Index = () => {
                   className="flex items-center gap-2 border-purple-500/30 text-purple-400 hover:bg-purple-500/10 hover:text-white"
                 >
                   <Heart className="w-4 h-4" />
-                  {/* ❤️ Like & Save */}
                   Like & Save
                 </Button>
                 <Button
@@ -241,7 +233,6 @@ const Index = () => {
                   className="flex items-center gap-2 border-green-500/30 text-green-400 hover:bg-green-500/10 hover:text-white"
                 >
                   <Volume2 className="w-4 h-4" />
-                  {/* 🔁 Regenerate (1 credit) */}
                   Regenerate (1 credit)
                 </Button>
               </div>

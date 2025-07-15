@@ -198,7 +198,10 @@ const Profile = () => {
                   </div>
                   <div className="text-sm text-gray-400">Credits Remaining</div>
                 </div>
-                <Button className="bg-gradient-to-r from-purple-600 to-green-600 hover:from-purple-700 hover:to-green-700">
+                <Button
+                  className="bg-gradient-to-r from-purple-600 to-green-600 hover:from-purple-700 hover:to-green-700"
+                  to="/pricing"
+                >
                   <CreditCard /> Buy More Credits
                 </Button>
               </div>
@@ -247,7 +250,10 @@ const Profile = () => {
                 <p className="text-gray-400 mb-6">
                   Start generating music and save your favorites!
                 </p>
-                <Button className="bg-gradient-to-r from-purple-600 to-green-600 hover:from-purple-700 hover:to-green-700">
+                <Button
+                  className="bg-gradient-to-r from-purple-600 to-green-600 hover:from-purple-700 hover:to-green-700"
+                  to="/"
+                >
                   Create Your First Track
                 </Button>
               </div>

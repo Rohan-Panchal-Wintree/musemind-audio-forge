@@ -7,6 +7,7 @@ interface Track {
   title: string;
   url: string;
   duration: number;
+  dateCreated: string;
 }
 
 interface AudioPlayerProps {
@@ -121,11 +122,7 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
 
   return (
     <div className="bg-slate-700/50 rounded-xl p-6 border border-purple-500/20">
-      <audio
-        ref={audioRef}
-        src="/assets/flute-melody-315241.mp3"
-        preload="metadata"
-      />
+      <audio ref={audioRef} src={track.url} preload="metadata" />
 
       <div className="flex flex-col space-y-4">
         {/* Track Info */}
