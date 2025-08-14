@@ -21,7 +21,13 @@ export const signup = async (req, res) => {
 
     sendToken(res, user._id);
     res.status(201).json({
-      user: { username, email, credits, id: user._id, createdAt },
+      user: {
+        username,
+        email,
+        credits,
+        id: user._id,
+        createdAt: user.createdAt,
+      },
       message: "Signup succesful",
     });
   } catch (error) {
@@ -54,4 +60,53 @@ export const login = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Login failed", error: err.message });
   }
+};
+
+//-------- update name of the user --------
+export const updatedUsername = async (req, res) => {
+  const userId = req.user.id;
+  const { name } = req.body;
+
+  const trimmedName = name.trim();
+
+  if (!name || trimmedName === "") {
+    return res.status(400).json({ messgae: "Name is required" });
+  }
+
+  if (trimmedName.length > 100) {
+    return res
+      .status(400)
+      .json({ message: "Name must be under 100 characters" });
+  }
+
+  try {
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { username: name.trim() },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      message: "Name updated successfully",
+      name: user.username,
+    });
+  } catch (error) {
+    console.error("Error updating name", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// -------- Logout --------
+export const logout = (req, res) => {
+  res.cookie("token", "", {
+    httpOnly: true,
+    expires: new Date(0),
+    sameSite: "Lax",
+  });
+
+  res.status(200).json({ message: "Logged out successfully" });
 };
