@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { decryptData, importKey } from "@/utils/crypto";
+import axios from "@/api/axiosConfig";
+import { updateEncryptedUser } from "@/utils/secureStorage";
+import { toast } from "sonner";
 
 // ---------- Types ----------
 interface User {
@@ -14,24 +17,42 @@ interface SavedTrack {
   id: string;
   title: string;
   url: string;
+  downloadUrl: string;
   duration: number;
+  dateCreated: string;
+}
+
+interface SavedLyric {
+  id: string;
+  title: string;
+  url: string;
+  downloadUrl: string;
   dateCreated: string;
 }
 
 interface UserContextType {
   user: User | null;
   savedTracks: SavedTrack[];
+  savedLyrics: SavedLyric[];
   currentGeneratedTrack: SavedTrack | null;
   isLoggedIn: boolean;
-  logout: () => void;
-  deductCredits: (amount: number) => void;
   addCredits: (amount: number) => void;
   saveTrack: (track: SavedTrack) => void;
+  saveLyric: (item: {
+    id: string;
+    title: string;
+    content: string;
+    dateCreated: string;
+  }) => Promise<void>;
   removeTrack: (trackId: string) => void;
-  updateProfile: (updates: { name?: string; email?: string }) => void;
+  removeLyric: (lyricId: string) => Promise<void>;
+  updateUsername: (newName: string) => Promise<void>;
   setCurrentGeneratedTrack: (track: SavedTrack | null) => void;
-  setUser: React.Dispatch<React.SetStateAction<User | null>>; // Added for AuthContext usage
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  setSavedTracks: React.Dispatch<React.SetStateAction<SavedTrack[]>>;
 }
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // ---------- Context ----------
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -44,6 +65,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [savedTracks, setSavedTracks] = useState<SavedTrack[]>([]);
   const [currentGeneratedTrack, setCurrentGeneratedTrack] =
     useState<SavedTrack | null>(null);
+  const [savedLyrics, setSavedLyrics] = useState<SavedLyric[]>([]);
 
   // -------- Load Encrypted User on Mount --------
   useEffect(() => {
@@ -79,11 +101,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  // -------- Persist Saved Tracks --------
-  useEffect(() => {
-    localStorage.setItem("musemind_tracks", JSON.stringify(savedTracks));
-  }, [savedTracks]);
-
   // -------- Persist Current Generated Track --------
   useEffect(() => {
     if (currentGeneratedTrack) {
@@ -97,18 +114,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [currentGeneratedTrack]);
 
   // -------- Core Functions --------
-  const logout = () => {
-    setUser(null);
-    setSavedTracks([]);
-    localStorage.removeItem("user_encrypted");
-    localStorage.removeItem("user_iv");
-  };
-
-  const deductCredits = (amount: number) => {
-    setUser((prev) =>
-      prev ? { ...prev, credits: Math.max(0, prev.credits - amount) } : null
-    );
-  };
 
   const addCredits = (amount: number) => {
     setUser((prev) =>
@@ -116,33 +121,188 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
-  const saveTrack = (track: SavedTrack) => {
-    setSavedTracks((prev) => [...prev, track]);
+  // Save the tracks in the backend
+  const saveTrack = async (track: SavedTrack) => {
+    try {
+      // Optimistic update
+      setSavedTracks((prev) =>
+        prev.some((t) => t.id === track.id) ? prev : [track, ...prev]
+      );
+
+      const { data } = await axios.post(
+        `${BASE_URL}/savedTracks`,
+        track, // sends all: id, title, url, downloadUrl, duration, dateCreated
+        { withCredentials: true }
+      );
+      if (data?.tracks) setSavedTracks(data.tracks);
+      toast.success("Track saved to your saved list! ❤️");
+    } catch (err: any) {
+      console.error("Failed to save track", err?.response?.data || err.message);
+      toast.error("Failed to save track");
+      // Rollback on error
+      setSavedTracks((prev) => prev.filter((t) => t.id !== track.id));
+    }
   };
 
-  const removeTrack = (trackId: string) => {
-    setSavedTracks((prev) => prev.filter((track) => track.id !== trackId));
+  // Save the lyrics in the backend
+  const saveLyric = async ({
+    id,
+    title,
+    content,
+    dateCreated,
+  }: {
+    id: string;
+    title: string;
+    content: string;
+    dateCreated: string;
+  }) => {
+    try {
+      const { data } = await axios.post(
+        `${BASE_URL}/lyrics`,
+        {
+          id,
+          title,
+          content,
+          dateCreated: dateCreated || new Date().toISOString(),
+        },
+        { withCredentials: true }
+      );
+      if (data?.lyrics) setSavedLyrics(data.lyrics);
+      toast.success("Lyrics saved to your saved list! ❤️");
+    } catch (err) {
+      console.error("Failed to save Lyric", err?.response?.data || err.message);
+      toast.error("Failed to save lyric");
+    }
   };
 
-  const updateProfile = (updates: { name?: string; email?: string }) => {
-    setUser((prev) => (prev ? { ...prev, ...updates } : null));
+  // Remove a saved track from backend
+  const removeTrack = async (trackId: string) => {
+    const snapshot = savedTracks;
+
+    try {
+      // Optimistic remove
+      setSavedTracks((prev) => prev.filter((t) => t.id !== trackId));
+
+      const { data } = await axios.delete(
+        `${BASE_URL}/savedTracks/${trackId}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (data?.tracks) setSavedTracks(data.tracks);
+      toast.success("Track removed from your saved list");
+    } catch (err: any) {
+      console.error(
+        "Failed to remove track",
+        err?.response?.data || err.message
+      );
+      toast.error("Failed to remove track");
+      // Rollback
+      setSavedTracks(snapshot);
+    }
   };
+
+  // Remove a saved lyric from backend
+  const removeLyric = async (lyricId: string) => {
+    const snapshot = savedLyrics;
+    try {
+      setSavedLyrics((prev) => prev.filter((l) => l.id !== lyricId));
+
+      const { data } = await axios.delete(`${BASE_URL}/lyrics/${lyricId}`, {
+        withCredentials: true,
+      });
+      if (data?.lyrics) setSavedLyrics(data.lyrics);
+      toast.success("Lyric removed from your saved list");
+    } catch (err) {
+      console.error(
+        "Failed to remove lyric",
+        err?.response?.data || err.message
+      );
+      toast.error("Failed to remove lyric");
+    }
+  };
+
+  const updateUsername = async (newName: string) => {
+    if (!user) return;
+
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/auth/update-name`,
+        { name: newName },
+        { withCredentials: true }
+      );
+
+      const updatedUser = {
+        ...user,
+        name: response.data.name,
+      };
+
+      setUser(updatedUser);
+      await updateEncryptedUser(updatedUser);
+      toast.success("Profile updated successfully!");
+    } catch (error: any) {
+      console.error(
+        "Failed to update username",
+        error?.response?.data || error.message
+      );
+      toast.error(`${error?.response?.data?.message}`);
+    }
+  };
+
+  // Load saved tracks on login
+  useEffect(() => {
+    const fetchSavedTracks = async () => {
+      if (!user) return;
+      try {
+        const { data } = await axios.get(`${BASE_URL}/savedTracks`, {
+          withCredentials: true,
+        });
+        setSavedTracks(data?.tracks || []);
+      } catch (error: any) {
+        console.error(
+          "Failed to fetch saved tracks",
+          error?.response?.data || error.message
+        );
+      }
+    };
+
+    const fetchSavedLyrics = async () => {
+      if (!user) return;
+      try {
+        const { data } = await axios.get(`${BASE_URL}/lyrics`, {
+          withCredentials: true,
+        });
+        setSavedLyrics(data?.lyrics || []);
+      } catch (err: any) {
+        console.error(
+          "Failed to Load Lyrics",
+          err?.response?.data || err.message
+        );
+      }
+    };
+
+    fetchSavedTracks();
+    fetchSavedLyrics();
+  }, [user]);
 
   return (
     <UserContext.Provider
       value={{
         user,
         savedTracks,
+        savedLyrics,
         currentGeneratedTrack,
         isLoggedIn: !!user,
-        logout,
-        deductCredits,
         addCredits,
         saveTrack,
+        saveLyric,
         removeTrack,
-        updateProfile,
+        removeLyric,
+        updateUsername,
         setCurrentGeneratedTrack,
         setUser,
+        setSavedTracks,
       }}
     >
       {children}

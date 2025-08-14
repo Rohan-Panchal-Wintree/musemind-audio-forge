@@ -3,6 +3,7 @@ import axios from "../api/axiosConfig";
 import { toast } from "sonner";
 import { encryptData, importKey } from "@/utils/crypto";
 import { useUser } from "./UserContext";
+import { updateEncryptedUser } from "@/utils/secureStorage";
 
 // ---------- Types ----------
 interface SignupData {
@@ -25,6 +26,7 @@ interface AuthContextType {
     formData: LoginData,
     navigate: (path: string) => void
   ) => Promise<void>;
+  logout: (navigate: (path: string) => void) => Promise<void>;
 }
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -34,7 +36,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // ---------- Provider ----------
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { setUser } = useUser();
+  const { setUser, setSavedTracks } = useUser();
 
   const signup = async (
     formData: SignupData,
@@ -53,12 +55,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         credits: userData.credits,
         createdAt: userData.createdAt,
       };
-      const key = await importKey();
-      const { encrypted, iv } = await encryptData(transformedUser, key);
       console.log("response", response.data);
 
-      localStorage.setItem("user_encrypted", encrypted);
-      localStorage.setItem("user_iv", iv);
+      await updateEncryptedUser(transformedUser);
 
       setUser(transformedUser);
 
@@ -88,12 +87,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         credits: userData.credits,
         createdAt: userData.createdAt,
       };
-      const key = await importKey();
-      const { encrypted, iv } = await encryptData(transformedUser, key);
       console.log("response", response.data);
 
-      localStorage.setItem("user_encrypted", encrypted);
-      localStorage.setItem("user_iv", iv);
+      await updateEncryptedUser(transformedUser);
 
       setUser(transformedUser);
 
@@ -105,8 +101,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const logout = async (navigate: (path: string) => void) => {
+    try {
+      await axios.post(
+        `${BASE_URL}/auth/logout`,
+        {},
+        { withCredentials: true }
+      );
+
+      setUser(null);
+      setSavedTracks([]);
+      localStorage.removeItem("user_encrypted");
+      localStorage.removeItem("user_iv");
+      navigate("/login");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Logout failed");
+      console.error("Logout error", error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ signup, login }}>
+    <AuthContext.Provider value={{ signup, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

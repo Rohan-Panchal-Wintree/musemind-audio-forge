@@ -2,12 +2,15 @@ import { ReactNode } from "react";
 import { AuthProvider } from "./AuthContext";
 import { UserProvider } from "./UserContext";
 import { AudioProvider } from "./AudioContext";
+import { PromptCacheProvider } from "./PromptCacheContext";
 
 const AppProvider = ({ children }: { children: ReactNode }) => {
   return (
     <UserProvider>
       <AuthProvider>
-        <AudioProvider>{children}</AudioProvider>
+        <AudioProvider>
+          <PromptCacheProvider>{children}</PromptCacheProvider>
+        </AudioProvider>
       </AuthProvider>
     </UserProvider>
   );

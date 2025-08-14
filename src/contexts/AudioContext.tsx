@@ -3,16 +3,26 @@ import { useUser } from "./UserContext";
 import { toast } from "sonner";
 import axios from "axios";
 import { encryptData, importKey } from "@/utils/crypto";
+import { updateEncryptedUser } from "@/utils/secureStorage";
+import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 interface AudioContextType {
   generatedAudioURL: string | null;
+  lyricsText: string | null;
   isGenerating: boolean;
-  generateMusic: (prompt: string, duration: number) => Promise<void>;
+  generateMusic: (
+    prompt: string,
+    duration: number,
+    file?: File
+  ) => Promise<void>;
+  generateLyrics: (prompt: string, genre: string) => Promise<string | null>;
 }
 
-const AudioContext = createContext<AudioContextType | undefined>(undefined);
+const AudioGenContext = createContext<AudioContextType | undefined>(undefined);
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_KEY = import.meta.env.VITE_GENAI_API_KEY;
 
 export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -22,8 +32,14 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({
   );
   const [isGenerating, setIsGenerating] = useState(false);
   const { setUser, user, setCurrentGeneratedTrack } = useUser();
+  const [lyricsText, setLyricsText] = useState<string | null>(null);
 
-  const generateMusic = async (prompt: string, duration: number) => {
+  // Generate audio
+  const generateMusic = async (
+    prompt: string,
+    duration: number,
+    file?: File
+  ) => {
     if (!prompt || !duration) {
       toast.error("Prompt and duration are required");
       return;
@@ -32,15 +48,29 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       setIsGenerating(true);
 
+      const formData = new FormData();
+      formData.append("prompt", prompt);
+      formData.append("duration", duration.toString());
+
+      if (file) {
+        formData.append("file", file);
+      }
+
+      console.log("Uploaded file from audio context", file);
+      console.log("Uploaded formdata from audio context", formData);
+
       const response = await axios.post(
         `${BASE_URL}/audio/generate`,
-        { prompt, duration },
-        { withCredentials: true }
+        formData,
+        {
+          withCredentials: true,
+          headers: { "Content-Type": "multipart/form-data" },
+        }
       );
 
-      console.log("response", response);
+      const { url, downloadUrl, credits, message } = response.data;
 
-      const { url, credits, message } = response.data;
+      console.log("response for the music", response.data);
 
       if (!url || credits === undefined) {
         throw new Error("Invalid response from server.");
@@ -53,12 +83,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({
         const updatedUser = { ...user, credits };
         setUser(updatedUser);
 
-        const key = await importKey();
-
-        const { encrypted, iv } = await encryptData(updatedUser, key);
-
-        localStorage.setItem("user_encrypted", encrypted);
-        localStorage.setItem("user_iv", iv);
+        await updateEncryptedUser(updatedUser);
       }
 
       if (setCurrentGeneratedTrack) {
@@ -66,6 +91,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({
           id: `track_${Date.now()}`,
           title: prompt.slice(0, 30) + (prompt.length > 30 ? "..." : ""),
           url: url,
+          downloadUrl: downloadUrl,
           duration: duration,
           dateCreated: new Date().toISOString(),
         };
@@ -73,24 +99,104 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({
         setCurrentGeneratedTrack(newTrack);
       }
     } catch (error: any) {
-      console.error(error);
+      console.error("Music generation failed:", error);
       toast.error(error?.response?.data?.message || "Failed to generate audio");
     } finally {
       setIsGenerating(false);
     }
   };
 
+  const generateLyrics = async (
+    prompt: string,
+    genre: string
+  ): Promise<string | null> => {
+    if (!prompt) {
+      toast.error("Please enter a Lyrics prompt");
+      return null;
+    }
+
+    try {
+      setIsGenerating(true);
+
+      const ai = new GoogleGenAI({
+        apiKey: API_KEY,
+      });
+
+      const genreInstruction = genre
+        ? `The lyrics should be in the style of ${genre} music.`
+        : "";
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `You are a lyrics generator. Only generate creative song lyrics. ${genreInstruction}
+          If the prompt is not related to music or lyrics, respond with: "Invalid prompt for lyrics generation."
+
+          Here is the prompt: "${prompt}"`,
+              },
+            ],
+          },
+        ],
+      });
+
+      const lyrics = response.text;
+
+      setLyricsText(lyrics);
+
+      console.log("response text", response.text);
+
+      if (!lyrics || lyrics.toLowerCase().includes("invalid prompt")) {
+        toast.error(
+          "Invalid lyrics prompt. Please try something song-related."
+        );
+        return null;
+      }
+
+      toast.success("Lyrics Generated succesfully");
+
+      const creditRes = await axios.post(
+        `${BASE_URL}/audio/deduct-credits`,
+        {},
+        { withCredentials: true }
+      );
+
+      const { credits } = creditRes.data;
+
+      if (user) {
+        const updatedUser = { ...user, credits };
+        setUser(updatedUser);
+        await updateEncryptedUser(updatedUser);
+      }
+    } catch (error) {
+      console.error("Lyrics generation failed:", error);
+      toast.error("error generating lyrics");
+      return null;
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
-    <AudioContext.Provider
-      value={{ generatedAudioURL, isGenerating, generateMusic }}
+    <AudioGenContext.Provider
+      value={{
+        generatedAudioURL,
+        lyricsText,
+        isGenerating,
+        generateMusic,
+        generateLyrics,
+      }}
     >
       {children}
-    </AudioContext.Provider>
+    </AudioGenContext.Provider>
   );
 };
 
 export const useAudio = (): AudioContextType => {
-  const context = useContext(AudioContext);
+  const context = useContext(AudioGenContext);
   if (!context) {
     throw new Error("useAudio must be used within an AudioProvider");
   }

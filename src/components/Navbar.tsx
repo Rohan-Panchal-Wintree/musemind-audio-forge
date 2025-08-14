@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Menu, X, Music, User, LogOut } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const location = useLocation();
-  const { user, isLoggedIn, logout } = useUser();
+  const navigate = useNavigate();
+  const { user, isLoggedIn } = useUser();
+  const { logout } = useAuth();
 
   const handleLogout = () => {
-    logout();
+    logout(navigate);
     setIsMenuOpen(false);
   };
 

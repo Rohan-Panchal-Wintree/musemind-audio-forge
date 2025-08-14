@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, Volume2, VolumeX, Download } from "lucide-react";
+import axios from "axios";
+import { toast } from "sonner";
 
 interface Track {
   id: string;
   title: string;
   url: string;
+  downloadUrl: string;
   duration: number;
   dateCreated: string;
 }
@@ -81,6 +84,42 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
     setCurrentTime(newTime);
     if (audioRef.current) {
       audioRef.current.currentTime = newTime;
+    }
+  };
+
+  // download the generated audio
+  // const handleDownload = () => {
+  //   if (!track.url) return;
+  //   const link = document.createElement("a");
+  //   link.href = track.downloadUrl;
+  //   link.setAttribute("download", `${track.title || "generated_audio"}.mp3`);
+  //   document.body.appendChild(link);
+  //   link.click();
+  //   document.body.removeChild(link);
+  // };
+
+  const handleDownload = async () => {
+    if (!track.downloadUrl) return;
+
+    try {
+      const response = await axios.get(track.downloadUrl, {
+        responseType: "blob",
+      });
+
+      const blob = new Blob([response.data], { type: "audio/mpeg" });
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${track.title || "generated_audio"}.mp3`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast.error("Failed to download audio");
     }
   };
 
@@ -218,6 +257,7 @@ export const AudioPlayer = ({ track }: AudioPlayerProps) => {
             <Button
               variant="ghost"
               size="sm"
+              onClick={handleDownload}
               className="text-gray-400 hover:text-gray-700 p-2"
             >
               <Download className="w-4 h-4" />
